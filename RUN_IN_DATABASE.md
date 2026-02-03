@@ -144,3 +144,11 @@ FOR EACH ROW
 EXECUTE FUNCTION fn_auto_yield_distribution();
 
 
+
+
+-----------
+# 数据库插入一条收益：
+INSERT INTO yield_records (asset_id, total_yield, description)
+SELECT id, 50000, 'Client payment second batch'
+FROM assets
+LIMIT 1;
