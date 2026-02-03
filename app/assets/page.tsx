@@ -16,7 +16,7 @@ export default function AssetsPage() {
 
   return (
     <div style={{ padding: 40 }}>
-      <h1>Assets Market</h1>
+      <p className="text-8xl text-white tracking-tighter text-balance">Assets Market</p>
 
       <div style={{ display: "grid", gap: 20 }}>
         {assets.map((a) => (

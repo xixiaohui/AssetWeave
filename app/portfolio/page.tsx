@@ -1,6 +1,6 @@
 // 我的持仓
-import Image from 'next/image'
- 
+
+
 export default function Page() {
-  return <Image src="/profile.jpg" alt="Profile" width={800} height={800} />
+  return <p className='text-8xl text-white tracking-tighter text-balance'>持仓</p>
 }
