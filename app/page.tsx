@@ -1,49 +1,149 @@
+"use client";
+
+import Link from "next/link";
+import {
+  AppBar,
+  Toolbar,
+  Typography,
+  Box,
+  Button,
+  Stack,
+  Grid,
+  Card,
+  CardContent,
+} from "@mui/material";
 
 export default function Home() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        
-        <p className='text-8xl text-white tracking-tighter text-balance bg-blue-800 p-3'>Asset Weave</p>
+    <Box sx={{ minHeight: "100vh", bgcolor: "#f7f8fa" }}>
+      {/* Top AppBar */}
+      <AppBar position="fixed" color="default" elevation={1}>
+        <Toolbar sx={{ display: "flex", justifyContent: "space-between" }}>
+          <Typography variant="h6" fontWeight={700}>
+            Assets Weave
+          </Typography>
 
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          
-           <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="/assets"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            资产详情 + 购买
-          </a>
+          <Stack direction="row" spacing={2}>
+            <Link href="/assets" style={{ textDecoration: "none" }}>
+              <Button variant="text">Assets</Button>
+            </Link>
+            <Link href="/portfolio" style={{ textDecoration: "none" }}>
+              <Button variant="text">Portfolio</Button>
+            </Link>
+            <Link href="/yields" style={{ textDecoration: "none" }}>
+              <Button variant="text">Yields</Button>
+            </Link>
+            <Link href="/issuer" style={{ textDecoration: "none" }}>
+              <Button variant="text">Issue Asset</Button>
+            </Link>
+          </Stack>
+        </Toolbar>
+      </AppBar>
 
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="/portfolio"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            （持仓）
-          </a>
-          
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="/yields"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            分红
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="/issuer"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            发行
-          </a>
-        </div>
-      </main>
-    </div>
+      {/* Main Content */}
+      <Box
+        sx={{
+          pt: 12, // 给 AppBar 留空间
+          px: 6,
+          display: "flex",
+          justifyContent: "center",
+        }}
+      >
+        <Stack spacing={8} width="100%" maxWidth={1100} alignItems="center">
+          {/* Hero */}
+          <Stack spacing={2} alignItems="center">
+            <Typography variant="h2" fontWeight={800} letterSpacing={-1}>
+              Assets Weave
+            </Typography>
+            <Typography color="text.secondary" textAlign="center">
+              Tokenize · Trade · Distribute Yield for Real-World Assets
+            </Typography>
+          </Stack>
+
+          {/* Navigation Cards */}
+          <Grid container spacing={4}>
+            <Grid size={{ xs: 12, md: 6 }}>
+              <NavCard
+                title="Assets Market"
+                desc="Browse assets and purchase tokenized shares"
+                href="/assets"
+                button="Explore Assets"
+              />
+            </Grid>
+
+            <Grid size={{ xs: 12, md: 6 }}>
+              <NavCard
+                title="My Portfolio"
+                desc="View your holdings and current market value"
+                href="/portfolio"
+                button="View Portfolio"
+              />
+            </Grid>
+
+            <Grid size={{ xs: 12, md: 6 }}>
+              <NavCard
+                title="Yield Distribution"
+                desc="Track yield records and dividend history"
+                href="/yields"
+                button="View Yields"
+              />
+            </Grid>
+
+            <Grid size={{ xs: 12, md: 6 }}>
+              <NavCard
+                title="Issue New Asset"
+                desc="Create and tokenize a new real-world asset"
+                href="/issuer"
+                button="Issue Asset"
+              />
+            </Grid>
+          </Grid>
+        </Stack>
+      </Box>
+    </Box>
+  );
+}
+
+function NavCard({
+  title,
+  desc,
+  href,
+  button,
+}: {
+  title: string;
+  desc: string;
+  href: string;
+  button: string;
+}) {
+  return (
+    <Card
+      sx={{
+        borderRadius: 4,
+        height: "100%",
+        transition: "0.25s",
+        "&:hover": {
+          boxShadow: 8,
+          transform: "translateY(-6px)",
+        },
+      }}
+    >
+      <CardContent>
+        <Stack spacing={3}>
+          <Typography variant="h5" fontWeight={700}>
+            {title}
+          </Typography>
+
+          <Typography color="text.secondary">{desc}</Typography>
+
+          <Box>
+            <Link href={href} style={{ textDecoration: "none" }}>
+              <Button variant="contained" size="large">
+                {button}
+              </Button>
+            </Link>
+          </Box>
+        </Stack>
+      </CardContent>
+    </Card>
   );
 }

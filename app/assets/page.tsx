@@ -5,9 +5,27 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import {
+  Box,
+  Card,
+  CardContent,
+  Typography,
+  Stack,
+  Grid,
+  Divider,
+} from "@mui/material";
+
+interface Asset {
+  id: string;
+  title: string;
+  asset_type: string;
+  total_value: number;
+  price_per_token: number;
+  total_supply: number;
+}
 
 export default function AssetsPage() {
-  const [assets, setAssets] = useState<any[]>([]);
+  const [assets, setAssets] = useState<Asset[]>([]);
 
   useEffect(() => {
     fetch("/api/assets")
@@ -15,33 +33,94 @@ export default function AssetsPage() {
       .then(setAssets);
   }, []);
 
-  
   return (
-    <div style={{ padding: 40 }}>
-      <p className="text-8xl text-white tracking-tighter text-balance">Assets Market</p>
+    <Box sx={{ p: 8 }}>
+      <Stack spacing={6}>
+        {/* Header */}
+        <Box>
+          <Typography variant="h4" fontWeight={700}>
+            Assets Market
+          </Typography>
+          <Typography color="text.secondary">
+            Browse tokenized real-world assets available for investment
+          </Typography>
+        </Box>
 
-      <div style={{ display: "grid", gap: 20 }}>
-        {assets.map((a) => (
-          <Link href={`/assets/${a.id}`} key={a.id}>
-            <div
-              
-              style={{
-                border: "1px solid #ddd",
-                padding: 20,
-                borderRadius: 8,
-              }}
-            >
-              <h2>{a.title}</h2>
-              <p>Type: {a.asset_type}</p>
-              <p>Total Value: ¥{a.total_value}</p>
-              <p>Price per share: ¥{a.price_per_token}</p>
-              <p>Total shares: {a.total_supply}</p>
-              
-            </div>
-          </Link>
-          
-        ))}
-      </div>
-    </div>
+        {/* Assets Grid */}
+        <Grid container spacing={3}>
+          {assets.map((a) => (
+            <Grid key={a.id} size={{ xs: 12, md: 6, lg: 4 }}>
+              <Link href={`/assets/${a.id}`} style={{ textDecoration: "none" }}>
+                <Card
+                  sx={{
+                    height: "100%",
+                    borderRadius: 4,
+                    transition: "0.2s",
+                    "&:hover": {
+                      boxShadow: 6,
+                      transform: "translateY(-4px)",
+                    },
+                  }}
+                >
+                  <CardContent>
+                    <Stack spacing={2}>
+                      <Typography variant="h6" fontWeight={600}>
+                        {a.title}
+                      </Typography>
+
+                      <Divider />
+
+                      <Stack
+                        direction="row"
+                        justifyContent="space-between"
+                      >
+                        <Typography color="text.secondary">
+                          Asset Type
+                        </Typography>
+                        <Typography>{a.asset_type}</Typography>
+                      </Stack>
+
+                      <Stack
+                        direction="row"
+                        justifyContent="space-between"
+                      >
+                        <Typography color="text.secondary">
+                          Total Value
+                        </Typography>
+                        <Typography>
+                          ¥{Number(a.total_value).toLocaleString()}
+                        </Typography>
+                      </Stack>
+
+                      <Stack
+                        direction="row"
+                        justifyContent="space-between"
+                      >
+                        <Typography color="text.secondary">
+                          Price / Share
+                        </Typography>
+                        <Typography>
+                          ¥{Number(a.price_per_token).toLocaleString()}
+                        </Typography>
+                      </Stack>
+
+                      <Stack
+                        direction="row"
+                        justifyContent="space-between"
+                      >
+                        <Typography color="text.secondary">
+                          Total Shares
+                        </Typography>
+                        <Typography>{a.total_supply}</Typography>
+                      </Stack>
+                    </Stack>
+                  </CardContent>
+                </Card>
+              </Link>
+            </Grid>
+          ))}
+        </Grid>
+      </Stack>
+    </Box>
   );
 }
