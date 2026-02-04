@@ -17,7 +17,7 @@ export default function Home() {
   return (
     <Box sx={{ minHeight: "100vh", bgcolor: "#f7f8fa" }}>
       {/* Top AppBar */}
-      <AppBar position="fixed" color="default" elevation={1}>
+      {/* <AppBar position="fixed" color="default" elevation={1}>
         <Toolbar sx={{ display: "flex", justifyContent: "space-between" }}>
           <Typography variant="h6" fontWeight={700}>
             Assets Weave
@@ -38,7 +38,7 @@ export default function Home() {
             </Link>
           </Stack>
         </Toolbar>
-      </AppBar>
+      </AppBar> */}
 
       {/* Main Content */}
       <Box

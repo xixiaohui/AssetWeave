@@ -1,113 +1,35 @@
-// 发行后台
-
 "use client";
 
-import {
-  Box,
-  Button,
-  Card,
-  CardContent,
-  TextField,
-  Typography,
-  Stack,
-  Grid
-} from "@mui/material";
 import { useState } from "react";
+import { Box, Stack, TextField, Typography, Button } from "@mui/material";
 
-export default function IssueAssetPage() {
-  const [form, setForm] = useState({
-    title: "",
-    desc: "",
-    value: "",
-    supply: "",
-    price: "",
-  });
+export default function IssuerPage() {
+  const [title, setTitle] = useState("");
+  const [desc, setDesc] = useState("");
+  const [value, setValue] = useState(0);
+  const [supply, setSupply] = useState(0);
+  const [price, setPrice] = useState(0);
 
   const submit = async () => {
-    await fetch("/api/assets", {
-      method: "POST",
-      body: JSON.stringify(form),
-    });
-    alert("Asset Issued");
+    // TODO: POST /api/assets
+    console.log({ title, desc, value, supply, price });
   };
 
   return (
-    <Box sx={{ p: 8, display: "flex", justifyContent: "center" }}>
-      <Card sx={{ width: 920 }}>
-        <CardContent>
-          <Stack spacing={5}>
-            <Typography variant="h4" fontWeight={700}>
-              Issue New Asset
-            </Typography>
-
-            <Grid container spacing={3}>
-              <Grid size={{ xs: 12 }}>
-                <TextField
-                  label="Asset Title"
-                  fullWidth
-                  onChange={(e) =>
-                    setForm({ ...form, title: e.target.value })
-                  }
-                />
-              </Grid>
-
-              <Grid size={{ xs: 12 }}>
-                <TextField
-                  label="Description"
-                  multiline
-                  rows={4}
-                  fullWidth
-                  onChange={(e) =>
-                    setForm({ ...form, desc: e.target.value })
-                  }
-                />
-              </Grid>
-
-              <Grid size={{ xs: 4 }}>
-                <TextField
-                  label="Total Value ($)"
-                  type="number"
-                  fullWidth
-                  onChange={(e) =>
-                    setForm({ ...form, value: e.target.value })
-                  }
-                />
-              </Grid>
-
-              <Grid size={{ xs: 4 }}>
-                <TextField
-                  label="Total Shares"
-                  type="number"
-                  fullWidth
-                  onChange={(e) =>
-                    setForm({ ...form, supply: e.target.value })
-                  }
-                />
-              </Grid>
-
-              <Grid size={{ xs: 4 }}>
-                <TextField
-                  label="Price per Share ($)"
-                  type="number"
-                  fullWidth
-                  onChange={(e) =>
-                    setForm({ ...form, price: e.target.value })
-                  }
-                />
-              </Grid>
-            </Grid>
-
-            <Button
-              variant="contained"
-              size="large"
-              onClick={submit}
-              sx={{ height: 56 }}
-            >
-              Issue Asset
-            </Button>
-          </Stack>
-        </CardContent>
-      </Card>
+    <Box sx={{ p: 8, maxWidth: 600, mx: "auto" }}>
+      <Typography variant="h4" fontWeight={700} mb={4}>
+        Issue New Asset
+      </Typography>
+      <Stack spacing={3}>
+        <TextField label="Title" fullWidth value={title} onChange={(e) => setTitle(e.target.value)} />
+        <TextField label="Description" fullWidth multiline rows={4} value={desc} onChange={(e) => setDesc(e.target.value)} />
+        <TextField label="Total Value" type="number" fullWidth value={value} onChange={(e) => setValue(Number(e.target.value))} />
+        <TextField label="Total Shares" type="number" fullWidth value={supply} onChange={(e) => setSupply(Number(e.target.value))} />
+        <TextField label="Price per Share" type="number" fullWidth value={price} onChange={(e) => setPrice(Number(e.target.value))} />
+        <Button variant="contained" size="large" onClick={submit}>
+          Issue Asset
+        </Button>
+      </Stack>
     </Box>
   );
 }
