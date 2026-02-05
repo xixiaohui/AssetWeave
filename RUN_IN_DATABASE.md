@@ -152,3 +152,14 @@ INSERT INTO yield_records (asset_id, total_yield, description)
 SELECT id, 50000, 'Client payment second batch'
 FROM assets
 LIMIT 1;
+
+
+-----------------
+#验证码表
+CREATE TABLE IF NOT EXISTS email_verification_codes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email TEXT NOT NULL,
+  code TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  used BOOLEAN DEFAULT FALSE
+);

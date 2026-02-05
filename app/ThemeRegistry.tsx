@@ -5,6 +5,9 @@ import { ThemeProvider, CssBaseline } from "@mui/material";
 import { theme } from "./theme";
 import { PrivyProvider } from "@privy-io/react-auth";
 
+import { WalletProvider } from "@/context/WalletContext";
+
+
 export default function ThemeRegistry({
   children,
 }: {
@@ -28,12 +31,14 @@ export default function ThemeRegistry({
         },
       }}
     >
-      <AppRouterCacheProvider>
-        <ThemeProvider theme={theme}>
-          <CssBaseline />
-          {children}
-        </ThemeProvider>
-      </AppRouterCacheProvider>
+      <WalletProvider>
+        <AppRouterCacheProvider>
+          <ThemeProvider theme={theme}>
+            <CssBaseline />
+            {children}
+          </ThemeProvider>
+        </AppRouterCacheProvider>
+      </WalletProvider>
     </PrivyProvider>
   );
 }

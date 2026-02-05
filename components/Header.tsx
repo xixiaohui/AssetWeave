@@ -7,11 +7,17 @@ import WalletSync from "./WalletSync";
 import { useState } from "react";
 import EmailLoginDialog from "./EmailLoginDialog";
 import WalletSync2 from "./WalletSync2";
+import WalletSync3 from "./WalletSync3";
+import { useWallet } from "@/context/WalletContext";
+import AuthDialog from "./AuthDialog";
 
 export default function Header() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
 
+  const [open, setOpen] = useState(false);
+  const { wallet } = useWallet();
+  
   const handleLoginSuccess = (email: string) => {
     setUserEmail(email);
     // 可调用 WalletSync 或刷新页面
@@ -43,15 +49,26 @@ export default function Header() {
         <WalletSync />
 
         {userEmail ? (
-            <Button color="inherit" onClick={() => setUserEmail(null)}>
+            <Button variant="outlined" onClick={() => setUserEmail(null)}>
               Logout ({userEmail})
             </Button>
           ) : (
-            <Button color="inherit" onClick={() => setDialogOpen(true)}>
+            <Button variant="contained" onClick={() => setDialogOpen(true)}>
               Login
             </Button>
           )}
           {userEmail && <WalletSync2 email={userEmail} />}
+
+        
+        <Button color="inherit" onClick={() => setOpen(true)}>
+          登陆
+        </Button>
+        <Typography>
+          {wallet
+            ? `Wallet: ${wallet.slice(0, 6)}...${wallet.slice(-4)}`
+            : "Not logged in"}
+        </Typography>
+        <WalletSync3 />
       </Toolbar>
 
       <EmailLoginDialog
@@ -59,7 +76,9 @@ export default function Header() {
         onClose={() => setDialogOpen(false)}
         onLoginSuccess={handleLoginSuccess}
       />
-      
+
+      <AuthDialog open={open} onClose={() => setOpen(false)} />
+        
     </AppBar>
   );
 }
