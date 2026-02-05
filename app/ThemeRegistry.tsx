@@ -3,6 +3,7 @@
 import { AppRouterCacheProvider } from "@mui/material-nextjs/v15-appRouter";
 import { ThemeProvider, CssBaseline } from "@mui/material";
 import { theme } from "./theme";
+import { PrivyProvider } from "@privy-io/react-auth";
 
 export default function ThemeRegistry({
   children,
@@ -10,11 +11,29 @@ export default function ThemeRegistry({
   children: React.ReactNode;
 }) {
   return (
-    <AppRouterCacheProvider>
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        {children}
-      </ThemeProvider>
-    </AppRouterCacheProvider>
+    <PrivyProvider
+      appId={process.env.NEXT_PUBLIC_PRIVY_APP_ID!}
+      config={{
+        loginMethods: ["email", "google"],
+
+        appearance: {
+          theme: "light",
+          accentColor: "#3b82f6",
+        },
+
+        embeddedWallets: {
+          ethereum: {
+            createOnLogin: "all-users",
+          },
+        },
+      }}
+    >
+      <AppRouterCacheProvider>
+        <ThemeProvider theme={theme}>
+          <CssBaseline />
+          {children}
+        </ThemeProvider>
+      </AppRouterCacheProvider>
+    </PrivyProvider>
   );
 }

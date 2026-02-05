@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { AppBar, Toolbar, Typography, Stack, Button } from "@mui/material";
+import LoginButton from "./LoginButton";
+import WalletSync from "./WalletSync";
 
 export default function Header() {
   return (
@@ -25,7 +27,11 @@ export default function Header() {
             <Button variant="text">Issue Asset</Button>
           </Link>
         </Stack>
+
+        <LoginButton />
+        <WalletSync />
       </Toolbar>
+      
     </AppBar>
   );
 }
