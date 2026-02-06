@@ -7,20 +7,20 @@ import WalletSync from "./WalletSync";
 import { useState } from "react";
 import EmailLoginDialog from "./EmailLoginDialog";
 import WalletSync2 from "./WalletSync2";
-import WalletSync3 from "./WalletSync3";
-import { useWallet } from "@/context/WalletContext";
-import AuthDialog from "./AuthDialog";
+
 
 export default function Header() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
 
-  const [open, setOpen] = useState(false);
-  const { wallet } = useWallet();
-  
-  const handleLoginSuccess = (email: string) => {
+  const [userWallet, setUserWallet] = useState<string | null>(null);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleLoginSuccess = (email: string,user:any) => {
     setUserEmail(email);
     // 可调用 WalletSync 或刷新页面
+    
+    setUserWallet(user.wallet_address);
   };
 
   return (
@@ -49,26 +49,15 @@ export default function Header() {
         <WalletSync />
 
         {userEmail ? (
-            <Button variant="outlined" onClick={() => setUserEmail(null)}>
-              Logout ({userEmail})
-            </Button>
-          ) : (
-            <Button variant="contained" onClick={() => setDialogOpen(true)}>
-              Login
-            </Button>
-          )}
-          {userEmail && <WalletSync2 email={userEmail} />}
-
-        
-        <Button color="inherit" onClick={() => setOpen(true)}>
-          登陆
-        </Button>
-        <Typography>
-          {wallet
-            ? `Wallet: ${wallet.slice(0, 6)}...${wallet.slice(-4)}`
-            : "Not logged in"}
-        </Typography>
-        <WalletSync3 />
+          <Button variant="outlined" onClick={() => setUserEmail(null)}>
+            登出 ({userWallet?.slice(0,15)})
+          </Button>
+        ) : (
+          <Button variant="contained" onClick={() => setDialogOpen(true)}>
+            登陆
+          </Button>
+        )}
+        {userEmail && <WalletSync2 email={userEmail} />}
       </Toolbar>
 
       <EmailLoginDialog
@@ -77,8 +66,7 @@ export default function Header() {
         onLoginSuccess={handleLoginSuccess}
       />
 
-      <AuthDialog open={open} onClose={() => setOpen(false)} />
-        
+
     </AppBar>
   );
 }

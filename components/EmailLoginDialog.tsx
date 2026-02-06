@@ -14,7 +14,8 @@ import {
 type Props = {
   open: boolean;
   onClose: () => void;
-  onLoginSuccess: (email: string) => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  onLoginSuccess: (email: string,user:any) => void;
 };
 
 export default function EmailLoginDialog({
@@ -47,7 +48,8 @@ export default function EmailLoginDialog({
       if (!res.ok) {
         setError(data?.message || "未知错误");
       } else {
-        onLoginSuccess(email);
+
+        onLoginSuccess(email,data.user);
         onClose();
       }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

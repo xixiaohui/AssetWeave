@@ -21,6 +21,10 @@ export async function POST(req: Request) {
 
   return NextResponse.json({
     ok: true,
-    wallet: wallet.address,
+    user: {
+      email: email,
+      name: name,
+      wallet_address: wallet.address,
+    },
   });
 }
