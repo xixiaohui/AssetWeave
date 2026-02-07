@@ -61,6 +61,14 @@ export default function Footer() {
               Privacy
             </MuiLink>
           </Stack>
+
+          <Stack spacing={1}>
+            <Typography fontWeight={600}>Doashboard</Typography>
+            <MuiLink href="/dashboard/eth" color="inherit" underline="hover">
+              ETH
+            </MuiLink>
+
+          </Stack>
         </Stack>
       </Stack>
 

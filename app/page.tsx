@@ -13,7 +13,21 @@ import {
   CardContent,
 } from "@mui/material";
 
+import { useEffect } from "react";
+import RWABalance from "@/components/RWABalance";
+
+
 export default function Home() {
+
+  useEffect(() => {
+    fetch("/api/contract")
+      .then(res => res.json())
+      .then(data => console.log(data.address));
+  }, []);
+
+  
+
+
   return (
     <Box sx={{ minHeight: "100vh", bgcolor: "#f7f8fa" }}>
       {/* Top AppBar */}
@@ -100,6 +114,11 @@ export default function Home() {
           </Grid>
         </Stack>
       </Box>
+
+      {/* <TestRWA></TestRWA> */}
+
+      
+
     </Box>
   );
 }
@@ -146,4 +165,19 @@ function NavCard({
       </CardContent>
     </Card>
   );
+}
+
+function TestRWA(){
+
+  const mint = async () => {
+    await fetch("/api/rwa/mint", {
+      method: "POST",
+      body: JSON.stringify({
+        to: "0xd12478358C37f5E86996eB917558b0ebfCc8A0e1",
+        amount: 100,
+      }),
+    });
+  };
+
+  return <Button variant="contained" onClick={mint}>Mint RWA</Button>;
 }
