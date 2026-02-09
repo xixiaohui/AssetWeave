@@ -67,6 +67,9 @@ export default function Footer() {
             <MuiLink href="/dashboard/eth" color="inherit" underline="hover">
               ETH
             </MuiLink>
+            <MuiLink href="/investor" color="inherit" underline="hover">
+              Investor
+            </MuiLink>
 
           </Stack>
         </Stack>

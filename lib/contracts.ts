@@ -11,5 +11,7 @@ export function getRWAAddress() {
 export function getRWAProtocolAddress() {
   const filePath = path.join(process.cwd(), "deployed_rwa.json");
   const deployed = JSON.parse(fs.readFileSync(filePath, "utf8"));
-  return deployed.rwaAsset;
+
+  
+  return deployed.RWAProtocol;
 }
