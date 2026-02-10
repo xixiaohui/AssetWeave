@@ -1,5 +1,5 @@
 import { ethers } from "ethers";
-import RWAArtifact from "@/abi/RWAAsset.json";
+import RWAArtifact from "@/abi/RWAProtocolV2.json";
 import { getRWAProtocolAddress } from "./contracts";
 
 import { decryptPrivateKey } from "./wallet-crypto";
