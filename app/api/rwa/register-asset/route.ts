@@ -1,26 +1,55 @@
 import { NextRequest } from "next/server";
 import { getRWAProtocolContract } from "@/lib/rwaProtocolContract";
 import crypto from "crypto";
+import pool from "@/lib/db";
 
 //上传文件 → hash → 上链存证
 
+// export async function POST(req: NextRequest) {
+//   const form = await req.formData();
+//   const file = form.get("file") as File;
+//   const assetId = form.get("assetId") as string;
+
+//   const buffer = Buffer.from(await file.arrayBuffer());
+//   const hash = "0x" + crypto.createHash("sha256").update(buffer).digest("hex");
+
+//   const rwa = getRWAProtocolContract();
+
+//   const tx = await rwa.registerAsset(assetId, hash);
+//   await tx.wait();
+
+//   return Response.json({
+//     success: true,
+//     assetId,
+//     hash,
+//     tx: tx.hash,
+//   });
+// }
+
+
+
+// export async function POST2(req: NextRequest) {
+//   const { assetId, docHash } = await req.json();
+//   const rwa = getRWAProtocolContract();
+
+//   const tx = await rwa.registerAsset(assetId, docHash);
+//   await tx.wait();
+
+//   return Response.json({ ok: true, tx: tx.hash });
+// }
+
 export async function POST(req: NextRequest) {
-  const form = await req.formData();
-  const file = form.get("file") as File;
-  const assetId = form.get("assetId") as string;
-
-  const buffer = Buffer.from(await file.arrayBuffer());
-  const hash = "0x" + crypto.createHash("sha256").update(buffer).digest("hex");
-
+  const { assetId, docHash, name, description } = await req.json();
   const rwa = getRWAProtocolContract();
 
-  const tx = await rwa.registerAsset(assetId, hash);
+  const tx = await rwa.registerAsset(assetId, docHash);
   await tx.wait();
 
-  return Response.json({
-    success: true,
-    assetId,
-    hash,
-    tx: tx.hash,
-  });
+  await pool.query(
+    `INSERT INTO rwa_assets(asset_id,name,description,doc_hash)
+     VALUES($1,$2,$3,$4)`,
+    [assetId, name, description, docHash]
+  );
+
+  return Response.json({ ok: true, tx: tx.hash });
 }

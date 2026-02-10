@@ -163,3 +163,99 @@ CREATE TABLE IF NOT EXISTS email_verification_codes (
   created_at TIMESTAMPTZ DEFAULT now(),
   used BOOLEAN DEFAULT FALSE
 );
+
+
+
+-------------------------------------RWA需要这六张表
+
+% # rwa_assets（资产主表）
+CREATE TABLE IF NOT EXISTS rwa_assets (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+
+  asset_id TEXT UNIQUE NOT NULL,
+  name TEXT NOT NULL,
+  description TEXT,
+  doc_hash TEXT NOT NULL,
+
+  total_issued NUMERIC DEFAULT 0,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+% #（Token 化记录）
+CREATE TABLE IF NOT EXISTS rwa_issues (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+
+  asset_id TEXT NOT NULL,
+  amount NUMERIC NOT NULL,
+
+  tx_hash TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+% rwa_investors（投资人）
+
+CREATE TABLE IF NOT EXISTS rwa_investors (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+
+  wallet TEXT UNIQUE NOT NULL,
+  name TEXT,
+
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+% rwa_sales（融资销售记录 ⭐）
+
+CREATE TABLE IF NOT EXISTS rwa_sales (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+
+  investor_wallet TEXT NOT NULL,
+  asset_id TEXT NOT NULL,
+  amount NUMERIC NOT NULL,
+
+  tx_hash TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+% rwa_profit_batches（分红批次 ⭐）
+
+CREATE TABLE IF NOT EXISTS rwa_profit_batches (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+
+  eth_amount NUMERIC NOT NULL,
+  tx_hash TEXT NOT NULL,
+
+  note TEXT,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+% rwa_contracts（合约配置）
+CREATE TABLE IF NOT EXISTS rwa_contracts (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+
+  name TEXT,
+  address TEXT NOT NULL,
+  network TEXT,
+
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+% 自动累计发行量触发器
+
+CREATE OR REPLACE FUNCTION update_asset_total_issued()
+RETURNS TRIGGER AS $$
+BEGIN
+  UPDATE rwa_assets
+  SET total_issued = total_issued + NEW.amount
+  WHERE asset_id = NEW.asset_id;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_update_asset_total
+AFTER INSERT ON rwa_issues
+FOR EACH ROW
+EXECUTE FUNCTION update_asset_total_issued();
+
+
+
