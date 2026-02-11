@@ -169,15 +169,33 @@ CREATE TABLE IF NOT EXISTS email_verification_codes (
 -------------------------------------RWA需要这六张表
 
 % # rwa_assets（资产主表）
-CREATE TABLE IF NOT EXISTS rwa_assets (
+DROP TABLE IF EXISTS rwa_assets;
+
+CREATE TABLE rwa_assets (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
 
+  -- 链上锚点
   asset_id TEXT UNIQUE NOT NULL,
-  name TEXT NOT NULL,
-  description TEXT,
   doc_hash TEXT NOT NULL,
 
-  total_issued NUMERIC DEFAULT 0,
+  -- 展示信息
+  name TEXT NOT NULL,
+  description TEXT,
+
+  -- 融资核心参数
+  total_raise NUMERIC NOT NULL,      -- 募资总额 (USDT)
+  price NUMERIC NOT NULL,            -- 单价
+  raise_days INT NOT NULL,           -- 募集天数
+  duration_days INT NOT NULL,        -- 运行天数
+
+  -- 融资过程数据（动态）
+  raised_amount NUMERIC DEFAULT 0,   -- 已募金额
+  investor_count INT DEFAULT 0,
+
+  -- 状态机（非常关键）
+  status TEXT NOT NULL DEFAULT 'RAISING',
+  -- RAISING / TOKENIZED / RUNNING / FINISHED
+
   created_at TIMESTAMP DEFAULT NOW()
 );
 
@@ -258,4 +276,120 @@ FOR EACH ROW
 EXECUTE FUNCTION update_asset_total_issued();
 
 
+% 认购台账（真实钱在这里对账）
+% 这张表的地位是：
+% 钱从哪来
+% 谁买了多少
+% 后面给谁发多少 Token
+% 清算时给谁销毁多少
+% 全靠它。
+CREATE TABLE subscriptions (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
 
+  user_id UUID NOT NULL,
+  asset_id TEXT NOT NULL,
+
+  usdt_amount NUMERIC NOT NULL,     -- 用户认购金额
+  token_amount NUMERIC NOT NULL,    -- 应得 token（= usdt / price）
+
+  wallet_address TEXT NOT NULL,     -- 发 Token 用（关键）
+
+  status TEXT NOT NULL DEFAULT 'PENDING',
+  -- PENDING / CONFIRMED / TOKEN_SENT / FINISHED
+
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+% 用户表（必须）
+CREATE TABLE users (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  email TEXT UNIQUE,
+  wallet_address TEXT UNIQUE NOT NULL,
+  kyc_status TEXT DEFAULT 'PENDING', -- PENDING / APPROVED / REJECTED
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+% 资金到账记录表（很多人漏掉的致命表）
+CREATE TABLE deposits (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+
+  user_id UUID,
+  asset_id TEXT,
+
+  tx_hash TEXT UNIQUE NOT NULL,
+  from_address TEXT,
+  amount NUMERIC,
+
+  confirmed BOOLEAN DEFAULT FALSE,
+
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+% Token 发放记录（审计命根子）
+% 谁在什么时候给谁发了多少 Token
+CREATE TABLE token_mints (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+
+  asset_id TEXT,
+  user_id UUID,
+
+  wallet_address TEXT,
+  amount NUMERIC,
+
+  tx_hash TEXT,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+% 分红批次表（核心）
+CREATE TABLE dividend_batches (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+
+  asset_id TEXT,
+  total_amount NUMERIC,
+
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+% 分红明细表（按人头算钱）
+CREATE TABLE dividend_distributions (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+
+  batch_id UUID,
+  user_id UUID,
+  wallet_address TEXT,
+
+  amount NUMERIC,
+  tx_hash TEXT,
+
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+% 清算 / 销毁记录表
+CREATE TABLE liquidations (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+
+  asset_id TEXT,
+  user_id UUID,
+
+  wallet_address TEXT,
+  token_amount NUMERIC,
+
+  tx_hash TEXT,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+% 操作审计日志（律师最爱）
+% 发布资产
+% 开募
+% 发 Token
+% 分红
+% 清算
+CREATE TABLE audit_logs (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+
+  action TEXT,
+  operator TEXT,
+  payload JSONB,
+
+  created_at TIMESTAMP DEFAULT NOW()
+);
