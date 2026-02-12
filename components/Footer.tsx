@@ -1,8 +1,13 @@
 "use client";
 
-import { Box, Stack, Typography, Link as MuiLink } from "@mui/material";
+import { Box, Stack, Typography, Link as MuiLink, IconButton, Link } from "@mui/material";
+
+import FavoriteIcon from '@mui/icons-material/Favorite';
+import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 
 export default function Footer() {
+  const addr="0xd12478358C37f5E86996eB917558b0ebfCc8A0e1";
+
   return (
     <Box
       component="footer"
@@ -27,7 +32,7 @@ export default function Footer() {
             Assets Weave
           </Typography>
           <Typography color="grey.500" variant="body2">
-            Tokenize · Trade · Distribute Yield for Real-World Assets
+            真实资产上链，价值自由流通，收益自动分配
           </Typography>
         </Stack>
 
@@ -75,13 +80,39 @@ export default function Footer() {
         </Stack>
       </Stack>
 
-      
+
       <Box sx={{ py: 5, textAlign: "center", bgcolor: "#111", color: "#fff" }}>
-        <Typography>© 2026 Asset Weave. All rights reserved.</Typography>
-        <Typography variant="body2" color="grey.500">
-          免责声明: 投资有风险，入市需谨慎。
-        </Typography>
+        <Typography>Asset Weave © 2026</Typography>
+        <Disclaimer addr={addr}></Disclaimer>
+
       </Box>
+    </Box>
+  );
+}
+
+function Disclaimer({ addr }: { addr: string }) {
+  return (
+    <Box display="inline-flex" alignItems="center" gap={0.5}>
+      <Typography variant="body2" color="grey.500">
+        所有记录公开透明、可验证、可追溯！
+      </Typography>
+
+      {/* 地址可点击 */}
+      <Link
+        href={`https://sepolia.etherscan.io/address/${addr}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        underline="hover"
+        color="grey.500"
+        sx={{ fontWeight: 500 }}
+      >
+        捐助:{addr.slice(0, 6)}...{addr.slice(-4)}
+      </Link>
+
+      {/* 心形图标 */}
+      <IconButton size="small" sx={{ p: 0 }}>
+        <FavoriteIcon color="error" fontSize="small" />
+      </IconButton>
     </Box>
   );
 }
