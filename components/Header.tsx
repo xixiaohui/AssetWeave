@@ -31,6 +31,9 @@ export default function Header() {
         </Typography>
 
         <Stack direction="row" spacing={2}>
+          <Link href="/home" style={{ textDecoration: "none" }}>
+            <Button variant="text">主页</Button>
+          </Link>
           <Link href="/assets" style={{ textDecoration: "none" }}>
             <Button variant="text">Assets</Button>
           </Link>

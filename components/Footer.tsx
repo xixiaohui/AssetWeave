@@ -75,9 +75,11 @@ export default function Footer() {
         </Stack>
       </Stack>
 
-      <Box mt={6} textAlign="center">
+      
+      <Box sx={{ py: 5, textAlign: "center", bgcolor: "#111", color: "#fff" }}>
+        <Typography>© 2026 Asset Weave. All rights reserved.</Typography>
         <Typography variant="body2" color="grey.500">
-          &copy; {new Date().getFullYear()} Assets Weave. All rights reserved.
+          免责声明: 投资有风险，入市需谨慎。
         </Typography>
       </Box>
     </Box>

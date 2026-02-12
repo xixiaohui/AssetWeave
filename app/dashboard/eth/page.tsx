@@ -12,6 +12,7 @@ import {
   Box,
 } from "@mui/material";
 import RWABalance from "@/components/RWABalance";
+import RwaDashboardPage from "@/components/RwaDashboardPage";
 
 export default function EthBalanceDashboard() {
   const [eth, setEth] = useState<string>("0");
@@ -95,6 +96,8 @@ export default function EthBalanceDashboard() {
       </Card>
 
       <RWABalance addr="0xd12478358C37f5E86996eB917558b0ebfCc8A0e1" />
+
+      <RwaDashboardPage></RwaDashboardPage>
     </Box>
   );
 }

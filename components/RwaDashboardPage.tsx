@@ -53,20 +53,20 @@ export default function RwaDashboardPage() {
   });
   const [dividendAmount, setDividendAmount] = useState("");
 
-  useEffect(() => {
-    const fetchAssets = async () => {
-    const res = await axios.get("/api/admin/assets");
-    setAssets(res.data);
-  };
+  // useEffect(() => {
+  //   const fetchAssets = async () => {
+  //     const res = await axios.get("/api/admin/assets");
+  //     setAssets(res.data);
+  //   };
 
-  const fetchSubs = async () => {
-    const res = await axios.get("/api/admin/subscriptions");
-    setSubs(res.data);
-  };
-  
-    fetchAssets();
-    fetchSubs();
-  }, []);
+  //   const fetchSubs = async () => {
+  //     const res = await axios.get("/api/admin/subscriptions");
+  //     setSubs(res.data);
+  //   };
+
+  //   fetchAssets();
+  //   fetchSubs();
+  // }, []);
 
   const fetchAssets = async () => {
     const res = await axios.get("/api/admin/assets");
