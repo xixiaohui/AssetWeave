@@ -16,7 +16,7 @@ import {
   Avatar,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import FinancialDashboard from "./FinancialDashboard";
+
 
 const assetsMock = [
   { name: "RWA 房产一号", type: "Real Estate", price: 100, raised: 5000, max: 10000, status: "RAISING" },
