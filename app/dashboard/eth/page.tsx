@@ -14,6 +14,7 @@ import {
 import RWABalance from "@/components/RWABalance";
 import RwaDashboardPage from "@/components/RwaDashboardPage";
 import MintXUSDTButton from "@/components/MintXUSDTButton";
+import XUSDTBalanceCard from "@/components/XUSDTBalanceCard";
 
 export default function EthBalanceDashboard() {
   const [eth, setEth] = useState<string>("0");
@@ -100,7 +101,8 @@ export default function EthBalanceDashboard() {
 
       <RwaDashboardPage></RwaDashboardPage>
 
-      {/* <MintXUSDTButton /> */}
+      <MintXUSDTButton />
+      <XUSDTBalanceCard></XUSDTBalanceCard>
     </Box>
   );
 }
