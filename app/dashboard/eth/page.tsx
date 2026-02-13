@@ -13,6 +13,7 @@ import {
 } from "@mui/material";
 import RWABalance from "@/components/RWABalance";
 import RwaDashboardPage from "@/components/RwaDashboardPage";
+import MintXUSDTButton from "@/components/MintXUSDTButton";
 
 export default function EthBalanceDashboard() {
   const [eth, setEth] = useState<string>("0");
@@ -98,6 +99,8 @@ export default function EthBalanceDashboard() {
       <RWABalance addr="0xd12478358C37f5E86996eB917558b0ebfCc8A0e1" />
 
       <RwaDashboardPage></RwaDashboardPage>
+
+      {/* <MintXUSDTButton /> */}
     </Box>
   );
 }

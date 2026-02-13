@@ -1,11 +1,12 @@
-import { ethers } from "ethers";
-import RWAArtifact from "@/abi/RWAProtocolV2.json";
 
-import { getRWAProtocolAddress } from "./contracts";
+import XUSDTArtifact from "@/abi/XUSDT.json";
+
+import { getXUSDTAddress } from "./contracts";
 
 import { decryptPrivateKey } from "./wallet-crypto";
+import { ethers } from "ethers";
 
-export function getRWAProtocolContract() {
+export function getXUSDT() {
 
   const encryptedKey = process.env.DEPLOYER_PRIVATE_KEY!;
   const privateKey = decryptPrivateKey(encryptedKey);
@@ -19,11 +20,10 @@ export function getRWAProtocolContract() {
   );
 
   const contract = new ethers.Contract(
-    getRWAProtocolAddress(),
-    RWAArtifact.abi,
+    getXUSDTAddress(),
+    XUSDTArtifact.abi,
     wallet
   );
 
   return contract;
 }
-

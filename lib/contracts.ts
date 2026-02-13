@@ -15,3 +15,11 @@ export function getRWAProtocolAddress() {
   
   return deployed.RWAProtocol;
 }
+
+export function getXUSDTAddress() {
+  const filePath = path.join(process.cwd(), "deployed_xusdt.json");
+  const deployed = JSON.parse(fs.readFileSync(filePath, "utf8"));
+
+  
+  return deployed.XUSDT;
+}
