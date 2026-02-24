@@ -10,6 +10,11 @@ export async function POST(req: Request) {
   const wallet = Wallet.createRandom();
   const encryptedKey = encryptPrivateKey(wallet.privateKey);
 
+  console.log("Generated wallet:", wallet.address);
+  console.log("Encrypted private key:", encryptedKey);
+
+
+
   await pool.query(
     `
     INSERT INTO users (email, name, role, wallet_address, encrypted_private_key)

@@ -21,10 +21,10 @@ export default async function YieldsPage() {
   const totalYields = rows.reduce((sum, r: any) => sum + Number(r.amount), 0);
 
   return (
-    <Box sx={{ p: 8 }}>
+    <Box sx={{ p: 8 ,mt:7}}>
       <Stack spacing={6}>
         <Typography variant="h4" fontWeight={700}>
-          My Yields
+          我的分红
         </Typography>
 
         <Card sx={{ borderRadius: 4 }}>

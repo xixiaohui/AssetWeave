@@ -17,9 +17,9 @@ export default async function PortfolioPage() {
   );
 
   return (
-    <Box sx={{ p: 8 }}>
+    <Box sx={{ p: 8 ,mt:7}}>
       <Typography variant="h4" fontWeight={700} mb={4}>
-        My Portfolio
+        我的持仓
       </Typography>
       <Grid container spacing={3}>
         {rows.map((r: any, i: number) => (

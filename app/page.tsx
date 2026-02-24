@@ -57,7 +57,7 @@ export default function Home() {
       {/* Main Content */}
       <Box
         sx={{
-          pt: 12, // 给 AppBar 留空间
+          pt: 27, // 给 AppBar 留空间
           px: 6,
           display: "flex",
           justifyContent: "center",
@@ -65,50 +65,51 @@ export default function Home() {
       >
         <Stack spacing={8} width="100%" maxWidth={1100} alignItems="center">
           {/* Hero */}
-          <Stack spacing={2} alignItems="center">
+          {/* <Stack spacing={2} alignItems="center">
             <Typography variant="h2" fontWeight={800} letterSpacing={-1}>
-              Assets Weave
+              资产织造
             </Typography>
             <Typography color="text.secondary" textAlign="center">
+              将现实世界资产代币化、交易并分配收益
               Tokenize · Trade · Distribute Yield for Real-World Assets
             </Typography>
-          </Stack>
+          </Stack> */}
 
           {/* Navigation Cards */}
           <Grid container spacing={4}>
             <Grid size={{ xs: 12, md: 6 }}>
               <NavCard
-                title="Assets Market"
-                desc="Browse assets and purchase tokenized shares"
+                title="资产市场"
+                desc="浏览资产并购买代币化股份"
                 href="/assets"
-                button="Explore Assets"
+                button="了解更多"
               />
             </Grid>
 
             <Grid size={{ xs: 12, md: 6 }}>
               <NavCard
-                title="My Portfolio"
-                desc="View your holdings and current market value"
+                title="我的持仓"
+                desc="查看您的持仓和当前市场价值"
                 href="/portfolio"
-                button="View Portfolio"
+                button="了解更多"
               />
             </Grid>
 
             <Grid size={{ xs: 12, md: 6 }}>
               <NavCard
-                title="Yield Distribution"
-                desc="Track yield records and dividend history"
+                title="我的分红"
+                desc="查看您的分红记录和总收益"
                 href="/yields"
-                button="View Yields"
+                button="了解更多"
               />
             </Grid>
 
             <Grid size={{ xs: 12, md: 6 }}>
               <NavCard
-                title="Issue New Asset"
-                desc="Create and tokenize a new real-world asset"
+                title="发行资产"
+                desc="创建并代币化一种新的现实世界资产"
                 href="/issuer"
-                button="Issue Asset"
+                button="了解更多"
               />
             </Grid>
           </Grid>

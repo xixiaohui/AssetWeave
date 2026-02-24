@@ -16,9 +16,9 @@ export default function IssuerPage() {
   };
 
   return (
-    <Box sx={{ p: 8, maxWidth: 600, mx: "auto" }}>
+    <Box sx={{ p: 8,mt:7 ,maxWidth: 600, mx: "auto" }}>
       <Typography variant="h4" fontWeight={700} mb={4}>
-        Issue New Asset
+        发行资产
       </Typography>
       <Stack spacing={3}>
         <TextField label="Title" fullWidth value={title} onChange={(e) => setTitle(e.target.value)} />
@@ -27,7 +27,7 @@ export default function IssuerPage() {
         <TextField label="Total Shares" type="number" fullWidth value={supply} onChange={(e) => setSupply(Number(e.target.value))} />
         <TextField label="Price per Share" type="number" fullWidth value={price} onChange={(e) => setPrice(Number(e.target.value))} />
         <Button variant="contained" size="large" onClick={submit}>
-          Issue Asset
+          发行资产
         </Button>
       </Stack>
     </Box>

@@ -23,10 +23,10 @@ export default function AssetsPage() {
   }, []);
 
   return (
-    <Box sx={{ p: 8 }}>
+    <Box sx={{ p: 8 ,mt:7}}>
       <Stack spacing={6}>
         <Typography variant="h4" fontWeight={700}>
-          Assets Market
+          资产市场
         </Typography>
 
         <Grid container spacing={3}>

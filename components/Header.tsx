@@ -1,13 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { AppBar, Toolbar, Typography, Stack, Button } from "@mui/material";
+import { AppBar, Toolbar, Typography, Stack, Button, CardMedia, Card } from "@mui/material";
 import LoginButton from "./LoginButton";
 import WalletSync from "./WalletSync";
 import { useState } from "react";
 import EmailLoginDialog from "./EmailLoginDialog";
 import WalletSync2 from "./WalletSync2";
-
+import Image from "next/image";
 
 export default function Header() {
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -26,48 +26,56 @@ export default function Header() {
   return (
     <AppBar position="fixed" color="default" elevation={1}>
       <Toolbar sx={{ display: "flex", justifyContent: "space-between" }}>
-        <Typography variant="h6" fontWeight={700}>
-          Assets Weave
-        </Typography>
-
+        {/* <Typography variant="h3" fontWeight={700}>
+          资产织造
+        </Typography> */}
+       <Image
+          src="/aw.png"
+          alt="资产织造"
+          width={360}
+          height={120}
+          priority
+        />
+        
+        
         <Stack direction="row" spacing={2}>
           <Link href="/home" style={{ textDecoration: "none" }}>
             <Button variant="text">主页</Button>
           </Link>
           <Link href="/assets" style={{ textDecoration: "none" }}>
-            <Button variant="text">Assets</Button>
+            <Button variant="text">资产市场</Button>
           </Link>
           <Link href="/portfolio" style={{ textDecoration: "none" }}>
-            <Button variant="text">Portfolio</Button>
+            <Button variant="text">持仓</Button>
           </Link>
           <Link href="/yields" style={{ textDecoration: "none" }}>
-            <Button variant="text">Yields</Button>
+            <Button variant="text">分红</Button>
           </Link>
           <Link href="/issuer" style={{ textDecoration: "none" }}>
-            <Button variant="text">Issue Asset</Button>
+            <Button variant="text">发行资产</Button>
           </Link>
         </Stack>
 
         <LoginButton />
         <WalletSync />
 
-        {userEmail ? (
+        {/* {userEmail ? (
           <Button variant="outlined" onClick={() => setUserEmail(null)}>
             登出 ({userWallet?.slice(0,15)})
           </Button>
         ) : (
           <Button variant="contained" onClick={() => setDialogOpen(true)}>
-            登陆
+            登陆/注册
           </Button>
         )}
-        {userEmail && <WalletSync2 email={userEmail} />}
+        {userEmail && <WalletSync2 email={userEmail} />} */}
       </Toolbar>
 
-      <EmailLoginDialog
+      {/* <EmailLoginDialog
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}
         onLoginSuccess={handleLoginSuccess}
-      />
+      /> */}
 
 
     </AppBar>

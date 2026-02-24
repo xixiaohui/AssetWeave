@@ -64,16 +64,16 @@ export default function EmailLoginDialog({
     <Dialog open={open} onClose={onClose}>
       <DialogTitle>{isRegister ? "注册" : "登录"}</DialogTitle>
       <DialogContent
-        sx={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 300 }}
+        sx={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 500 }}
       >
         <TextField
-          label="Email"
+          label="邮箱"
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
         {isRegister && (
-          <TextField label="Name" value={name} onChange={(e) => setName(e.target.value)} />
+          <TextField label="姓名" value={name} onChange={(e) => setName(e.target.value)} />
         )}
         {error && <Typography color="error">{error}</Typography>}
       </DialogContent>
