@@ -24,7 +24,7 @@ export default async function YieldsPage() {
     <Box sx={{ p: 8 ,mt:7}}>
       <Stack spacing={6}>
         <Typography variant="h4" fontWeight={700}>
-          我的分红
+          分红
         </Typography>
 
         <Card sx={{ borderRadius: 4 }}>

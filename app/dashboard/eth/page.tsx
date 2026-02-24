@@ -97,12 +97,13 @@ export default function EthBalanceDashboard() {
         </CardContent>
       </Card>
 
-      <RWABalance addr="0xd12478358C37f5E86996eB917558b0ebfCc8A0e1" />
+      {/* <RWABalance addr="0xd12478358C37f5E86996eB917558b0ebfCc8A0e1" /> */}
 
-      <RwaDashboardPage></RwaDashboardPage>
+      {/* <RwaDashboardPage></RwaDashboardPage> */}
 
-      <MintXUSDTButton />
-      <XUSDTBalanceCard></XUSDTBalanceCard>
+      {/* <MintXUSDTButton /> */}
+
+      {/* <XUSDTBalanceCard></XUSDTBalanceCard> */}
     </Box>
   );
 }

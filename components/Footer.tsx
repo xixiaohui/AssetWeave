@@ -33,12 +33,12 @@ export default function Footer() {
           <Image
             src="/aw2.png"
             alt="资产织造"
-            width={360}
-            height={120}
+            width={240}
+            height={80}
             priority
           />
           <Typography color="grey.500" variant="body2">
-            真实资产上链，价值自由流通，收益自动分配(供学习使用)
+            技术级RWA模拟平台
           </Typography>
         </Stack>
 
@@ -46,49 +46,51 @@ export default function Footer() {
         <Stack direction="row" spacing={6}>
           <Stack spacing={1}>
             <Typography fontWeight={600}>平台</Typography>
-            <MuiLink href="/assets" color="inherit" underline="hover">
+            <MuiLink href="/assets" color="grey.500" underline="hover">
               资产市场
             </MuiLink>
-            <MuiLink href="/portfolio" color="inherit" underline="hover">
-              我的持仓
+            <MuiLink href="/portfolio" color="grey.500" underline="hover">
+              持仓
             </MuiLink>
-            <MuiLink href="/yields" color="inherit" underline="hover">
-              我的分红
+            <MuiLink href="/yields" color="grey.500" underline="hover">
+              分红
             </MuiLink>
-            <MuiLink href="/issuer" color="inherit" underline="hover">
+            <MuiLink href="/issuer" color="grey.500" underline="hover">
               发行资产
+            </MuiLink>
+            <MuiLink href="/dashboard/eth" color="grey.500" underline="hover">
+              ETH
             </MuiLink>
           </Stack>
 
           <Stack spacing={1}>
             <Typography fontWeight={600}>公司</Typography>
-            <MuiLink href="#" color="inherit" underline="hover">
+            <MuiLink href="#" color="grey.500" underline="hover">
               关于我们
             </MuiLink>
-            <MuiLink href="#" color="inherit" underline="hover">
+            <MuiLink href="#" color="grey.500" underline="hover">
               联系我们
             </MuiLink>
-            <MuiLink href="#" color="inherit" underline="hover">
+            <MuiLink href="#" color="grey.500" underline="hover">
               隐私政策
+            </MuiLink>
+            <MuiLink href="/investor" color="grey.500" underline="hover">
+              投资人看板
             </MuiLink>
           </Stack>
 
           <Stack spacing={1}>
-            <Typography fontWeight={600}>帮助</Typography>
-            <MuiLink href="/dashboard/eth" color="inherit" underline="hover">
-              ETH
+            <Typography fontWeight={600}>我的</Typography>
+            <MuiLink href="/my" color="grey.500" underline="hover">
+              主页
             </MuiLink>
-            <MuiLink href="/investor" color="inherit" underline="hover">
-              Investor
-            </MuiLink>
-
           </Stack>
         </Stack>
       </Stack>
 
 
       <Box sx={{ py: 5, textAlign: "center", bgcolor: "#111", color: "#fff" }}>
-        <Typography>assetweave.shop © 2026</Typography>
+        <Typography color="grey.500">assetweave.shop © 2026</Typography>
         <Disclaimer addr={addr}></Disclaimer>
       </Box>
     </Box>

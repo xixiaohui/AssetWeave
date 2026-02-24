@@ -1,43 +1,27 @@
 "use client";
 
 import Link from "next/link";
-import { AppBar, Toolbar, Typography, Stack, Button, CardMedia, Card } from "@mui/material";
+import { AppBar, Toolbar, Stack, Button, } from "@mui/material";
 import LoginButton from "./LoginButton";
 import WalletSync from "./WalletSync";
-import { useState } from "react";
-import EmailLoginDialog from "./EmailLoginDialog";
-import WalletSync2 from "./WalletSync2";
+
 import Image from "next/image";
 
 export default function Header() {
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [userEmail, setUserEmail] = useState<string | null>(null);
-
-  const [userWallet, setUserWallet] = useState<string | null>(null);
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleLoginSuccess = (email: string,user:any) => {
-    setUserEmail(email);
-    // 可调用 WalletSync 或刷新页面
-    
-    setUserWallet(user.wallet_address);
-  };
-
   return (
     <AppBar position="fixed" color="default" elevation={1}>
       <Toolbar sx={{ display: "flex", justifyContent: "space-between" }}>
         {/* <Typography variant="h3" fontWeight={700}>
           资产织造
         </Typography> */}
-       <Image
+        <Image
           src="/aw.png"
           alt="资产织造"
-          width={360}
-          height={120}
+          width={240}
+          height={80}
           priority
         />
-        
-        
+
         <Stack direction="row" spacing={2}>
           <Link href="/home" style={{ textDecoration: "none" }}>
             <Button variant="text">主页</Button>
