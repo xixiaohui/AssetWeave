@@ -1,6 +1,6 @@
 "use client"
 
-import { Box, Typography } from "@mui/material";
+import { Box, Button, Typography } from "@mui/material";
 import { useWallets } from "@privy-io/react-auth";
 
 export default function MyPage() {
@@ -17,6 +17,10 @@ export default function MyPage() {
             <Typography sx={{ mt: 2 }}>
                 我的钱包地址：{address ? address : "未连接钱包"}
             </Typography>
+
+            <Button variant="contained" size="large">
+                <Typography variant="h4">KYC</Typography>
+            </Button>
 
         </Box>
     );

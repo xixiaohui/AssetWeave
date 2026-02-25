@@ -23,3 +23,11 @@ export function getXUSDTAddress() {
   
   return deployed.XUSDT;
 }
+
+export function getRWAPlatformAddress() {
+  const filePath = path.join(process.cwd(), "deployed_platform1155.json");
+  const deployed = JSON.parse(fs.readFileSync(filePath, "utf8"));
+
+  
+  return deployed.RWAPlatform;
+}

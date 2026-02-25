@@ -45,18 +45,30 @@ export default function Footer() {
         {/* Links */}
         <Stack direction="row" spacing={6}>
           <Stack spacing={1}>
-            <Typography fontWeight={600}>平台</Typography>
-            <MuiLink href="/assets" color="grey.500" underline="hover">
+            <Typography fontWeight={600}>平台管理</Typography>
+            <MuiLink href="#" color="grey.500" underline="hover">
               资产市场
+            </MuiLink>
+            <MuiLink href="#" color="grey.500" underline="hover">
+              资产管理
+            </MuiLink>
+            <MuiLink href="#" color="grey.500" underline="hover">
+              投资人管理
+            </MuiLink>
+            <MuiLink href="#" color="grey.500" underline="hover">
+              查看投资人
+            </MuiLink>
+            <MuiLink href="#" color="grey.500" underline="hover">
+              分红管理
+            </MuiLink>
+            <MuiLink href="#" color="grey.500" underline="hover">
+              财务面板
+            </MuiLink>
+            <MuiLink href="#" color="grey.500" underline="hover">
+              风险控制
             </MuiLink>
             <MuiLink href="/portfolio" color="grey.500" underline="hover">
               持仓
-            </MuiLink>
-            <MuiLink href="/yields" color="grey.500" underline="hover">
-              分红
-            </MuiLink>
-            <MuiLink href="/issuer" color="grey.500" underline="hover">
-              发行资产
             </MuiLink>
             <MuiLink href="/dashboard/eth" color="grey.500" underline="hover">
               ETH
@@ -64,7 +76,57 @@ export default function Footer() {
           </Stack>
 
           <Stack spacing={1}>
+            <Typography fontWeight={600}>链上协议</Typography>
+            <MuiLink href="#" color="grey.500" underline="hover">
+              合约信息
+            </MuiLink>
+            <MuiLink href="#" color="grey.500" underline="hover">
+              链上数据
+            </MuiLink>
+            <MuiLink href="#" color="grey.500" underline="hover">
+              交易记录
+            </MuiLink>
+            <MuiLink href="#" color="grey.500" underline="hover">
+              白名单
+            </MuiLink>
+            <MuiLink href="/investor" color="grey.500" underline="hover">
+              投资人看板
+            </MuiLink>
+          </Stack>
+
+          <Stack spacing={1}>
+            <Typography fontWeight={600}>投资人</Typography>
+            <MuiLink href="/my" color="grey.500" underline="hover">
+              我的钱包
+            </MuiLink>
+            <MuiLink href="#" color="grey.500" underline="hover">
+              KYC申请
+            </MuiLink>
+            <MuiLink href="#" color="grey.500" underline="hover">
+              我的资产
+            </MuiLink>
+            <MuiLink href="#" color="grey.500" underline="hover">
+              查看募资进度
+            </MuiLink>
+            <MuiLink href="#" color="grey.500" underline="hover">
+              我的认购
+            </MuiLink>
+            <MuiLink href="#" color="grey.500" underline="hover">
+              收益记录
+            </MuiLink>
+            <MuiLink href="#" color="grey.500" underline="hover">
+              领取分红
+            </MuiLink>
+            <MuiLink href="#" color="grey.500" underline="hover">
+              到期赎回
+            </MuiLink>
+          </Stack>
+
+          <Stack spacing={1}>
             <Typography fontWeight={600}>公司</Typography>
+            <MuiLink href="/devlog" color="grey.500" underline="hover">
+              开发记录
+            </MuiLink>
             <MuiLink href="#" color="grey.500" underline="hover">
               关于我们
             </MuiLink>
@@ -77,15 +139,10 @@ export default function Footer() {
             <MuiLink href="/investor" color="grey.500" underline="hover">
               投资人看板
             </MuiLink>
-          </Stack>
 
-          <Stack spacing={1}>
-            <Typography fontWeight={600}>我的</Typography>
-            <MuiLink href="/my" color="grey.500" underline="hover">
-              主页
-            </MuiLink>
           </Stack>
         </Stack>
+
       </Stack>
 
 
