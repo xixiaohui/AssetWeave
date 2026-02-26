@@ -1,4 +1,12 @@
+---
+title: SQL DATABASE
+description: 
+date: "2026-02-25"
+tags: [solidity,RWA, Web3, Next.js,ERC20]
+cover: /images/rwa-cover.jpg
+---
 
+```sql
 ① 用户表（投资人 / 资产方）
 CREATE TABLE users (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -141,3 +149,5 @@ ALTER TABLE trades              OWNER TO assetweave;
 ALTER TABLE users               OWNER TO assetweave;
 ALTER TABLE yield_distributions OWNER TO assetweave;
 ALTER TABLE yield_records       OWNER TO assetweave;
+
+```

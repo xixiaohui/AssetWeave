@@ -1,0 +1,91 @@
+---
+title: RWA XUSDT 代币 
+description: 投资认购,分红都使用这个合约的代币,功能相当于USDT,平台代货币
+date: "2026-02-24"
+tags: [solidity,RWA, Web3, Next.js,ERC20,USDT]
+cover: /images/rwa-cover.jpg
+---
+
+```ts
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
+import "@openzeppelin/contracts/utils/Pausable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+
+contract XUSDT is ERC20Permit, ERC20Burnable, Pausable, Ownable {
+    uint8 private constant _DECIMALS = 6;
+
+    mapping(address => bool) public blacklisted;
+
+    constructor()
+        ERC20("XUSDT Test Stablecoin", "XUSDT")
+        ERC20Permit("XUSDT Test Stablecoin")
+        Ownable(msg.sender)
+    {
+        _mint(msg.sender, 1_000_000 * 10 ** _DECIMALS);
+    }
+
+    function decimals() public pure override returns (uint8) {
+        return _DECIMALS;
+    }
+
+    // 黑名单（USDT 核心）
+    function setBlacklist(address user, bool status) external onlyOwner {
+        blacklisted[user] = status;
+    }
+
+    modifier notBlacklisted(address user) {
+        require(!blacklisted[user], "Blacklisted");
+        _;
+    }
+
+    // USDT 坑：approve 必须先归零
+    function approve(address spender, uint256 amount)
+        public
+        override
+        notBlacklisted(msg.sender)
+        notBlacklisted(spender)
+        returns (bool)
+    {
+        require(
+            amount == 0 || allowance(msg.sender, spender) == 0,
+            "Reset allowance to 0 first"
+        );
+        return super.approve(spender, amount);
+    }
+
+    function mint(address to, uint256 amount) external onlyOwner {
+        _mint(to, amount);
+    }
+
+    function faucetMint() external {
+        _mint(msg.sender, 10_000 * 10 ** _DECIMALS);
+    }
+
+    function forceBurn(address user, uint256 amount) external onlyOwner {
+        _burn(user, amount);
+    }
+
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    function unpause() external onlyOwner {
+        _unpause();
+    }
+
+    function _update(address from, address to, uint256 value)
+        internal
+        override
+        whenNotPaused
+    {
+        require(!blacklisted[from] && !blacklisted[to], "Blacklisted");
+        super._update(from, to, value);
+    }
+}
+
+```
+

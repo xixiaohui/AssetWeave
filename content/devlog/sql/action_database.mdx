@@ -1,3 +1,12 @@
+---
+title: SQL DATABASE
+description: 
+date: "2026-02-25"
+tags: [solidity,RWA, Web3, Next.js,ERC20]
+cover: /images/rwa-cover.jpg
+---
+
+```sql
 DO $$
 DECLARE
   r RECORD;
@@ -16,7 +25,7 @@ BEGIN
   END LOOP;
 END $$;
 
-<!-- 1. 用户表（KYC + 钱包） -->
+{/* <!-- 1. 用户表（KYC + 钱包） --> */}
 CREATE TABLE users (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
 
@@ -29,7 +38,7 @@ CREATE TABLE users (
 
 CREATE INDEX idx_users_wallet ON users(wallet_address);
 
-<!-- 2. 资产主表 -->
+{/* <!-- 2. 资产主表 --> */}
 CREATE TABLE rwa_assets (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
 
@@ -43,7 +52,7 @@ CREATE TABLE rwa_assets (
 );
 
 
-<!-- 3. 资金到账记录（链上监听写入） -->
+{/* <!-- 3. 资金到账记录（链上监听写入） --> */}
 CREATE TABLE deposits (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
 
@@ -63,7 +72,7 @@ CREATE INDEX idx_deposits_user ON deposits(user_id);
 CREATE INDEX idx_deposits_asset ON deposits(asset_id);
 
 
-<!-- 4. 认购台账 -->
+{/* <!-- 4. 认购台账 --> */}
 
 CREATE TABLE subscriptions (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -84,7 +93,7 @@ CREATE TABLE subscriptions (
 CREATE INDEX idx_sub_user ON subscriptions(user_id);
 CREATE INDEX idx_sub_asset ON subscriptions(asset_id);
 
-<!-- 5. Token 发放记录（极其关键） -->
+{/* <!-- 5. Token 发放记录（极其关键） --> */}
 CREATE TABLE token_mints (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
 
@@ -100,7 +109,7 @@ CREATE TABLE token_mints (
 
 CREATE INDEX idx_mint_user ON token_mints(user_id);
 
-<!-- 6. 分红批次 -->
+{/* <!-- 6. 分红批次 --> */}
 CREATE TABLE dividend_batches (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
 
@@ -111,7 +120,7 @@ CREATE TABLE dividend_batches (
 );
 
 
-<!-- 7. 分红明细（按用户） -->
+{/* <!-- 7. 分红明细（按用户） --> */}
 CREATE TABLE dividend_distributions (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
 
@@ -128,7 +137,7 @@ CREATE TABLE dividend_distributions (
 
 CREATE INDEX idx_div_user ON dividend_distributions(user_id);
 
-<!-- 8. 清算 / 销毁记录 -->
+{/* <!-- 8. 清算 / 销毁记录 --> */}
 CREATE TABLE liquidations (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
 
@@ -142,7 +151,7 @@ CREATE TABLE liquidations (
   created_at TIMESTAMP DEFAULT NOW()
 );
 
-<!-- 9. 全链路审计日志（律师 & 审计最爱） -->
+{/* <!-- 9. 全链路审计日志（律师 & 审计最爱） --> */}
 CREATE TABLE audit_logs (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
 
@@ -154,3 +163,5 @@ CREATE TABLE audit_logs (
 );
 
 CREATE INDEX idx_audit_action ON audit_logs(action);
+
+```

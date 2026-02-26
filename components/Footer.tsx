@@ -38,7 +38,7 @@ export default function Footer() {
             priority
           />
           <Typography color="grey.500" variant="body2">
-            技术级RWA模拟平台
+            技术级RWA对外公开融资模拟平台(金融)
           </Typography>
         </Stack>
 
@@ -123,7 +123,7 @@ export default function Footer() {
           </Stack>
 
           <Stack spacing={1}>
-            <Typography fontWeight={600}>公司</Typography>
+            <Typography fontWeight={600}>AW公司</Typography>
             <MuiLink href="/devlog" color="grey.500" underline="hover">
               开发记录
             </MuiLink>

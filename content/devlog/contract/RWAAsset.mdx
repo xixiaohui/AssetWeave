@@ -1,0 +1,22 @@
+---
+title: RWA 最简单的ERC20合约
+description: 已废弃 合约地址0x6c8c78b1E0f8570266a60C4bbBc211Be98292AA3
+date: "2026-02-24"
+tags: [solidity,RWA, Web3, Next.js,ERC20]
+cover: /images/rwa-cover.jpg
+---
+
+```ts
+// contracts/RWAAsset.sol
+pragma solidity ^0.8.20;
+
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+
+contract RWAAsset is ERC20 {
+    constructor() ERC20("RWA Asset", "RWA") {}
+
+    function mint(address to, uint256 amount) external {
+        _mint(to, amount);
+    }
+}
+```

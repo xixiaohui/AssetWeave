@@ -1,0 +1,227 @@
+---
+title: RWA 1155合约
+description: 当前平台使用的智能合约 已经部署上线 合约地址0xCeDe98d5B92dc354Eb1d544be3481C516D18ea8E
+date: "2026-02-25"
+tags: [solidity,RWA, Web3, Next.js]
+cover: /images/rwa-cover.jpg
+---
+
+```js
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
+import "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Supply.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+
+/// @title RWAPlatform1155 - 多资产 ERC1155 RWA 平台
+contract RWAPlatform1155 is ERC1155, ERC1155Supply, Ownable, ReentrancyGuard {
+    using SafeERC20 for IERC20;
+
+    IERC20 public immutable usdt;
+
+    uint256 private constant ACC = 1e18; // 分红精度因子
+
+    constructor(address _usdt) ERC1155("") Ownable(msg.sender) {
+        usdt = IERC20(_usdt);
+    }
+
+    // ===== 资产结构 =====
+    struct Asset {
+        uint256 price;          // 1 token = ? USDT (最小单位)
+        uint256 minRaise;
+        uint256 maxRaise;
+        uint256 totalRaised;
+        uint256 deadline;       // 募集截止时间 (秒)
+        uint256 endTime;        // 赎回截止时间 (秒)
+        bool running;
+        bool finished;
+    }
+
+    mapping(uint256 => Asset) public assets;            // tokenId => Asset
+    mapping(address => bool) public whitelisted;       // KYC 白名单
+
+    // 分红模型
+    mapping(uint256 => uint256) public accProfitPerShare;               // tokenId => 累计分红
+    mapping(uint256 => mapping(address => uint256)) public profitDebt;  // tokenId => 用户已记账
+    mapping(uint256 => mapping(address => uint256)) public pending;     // tokenId => 用户待领取分红
+
+    // 用户投资记录
+    mapping(uint256 => mapping(address => uint256)) public investedAmount; // tokenId => 用户投入 USDT
+
+    // ===== Events =====
+    event Subscribed(address indexed user, uint256 indexed tokenId, uint256 usdtAmount);
+    event ProfitInjected(uint256 indexed tokenId, uint256 amount);
+    event Claimed(address indexed user, uint256 indexed tokenId, uint256 amount);
+    event Redeemed(address indexed user, uint256 indexed tokenId, uint256 principal, uint256 profit);
+    event AssetRegistered(uint256 indexed tokenId);
+    event AssetStarted(uint256 indexed tokenId);
+
+    // ===== KYC =====
+    function setWhitelist(address user, bool ok) external onlyOwner {
+        whitelisted[user] = ok;
+    }
+
+    // ===== 注册资产 =====
+    function registerAsset(
+        uint256 tokenId,
+        uint256 price,
+        uint256 minRaise,
+        uint256 maxRaise,
+        uint256 deadline,
+        uint256 duration
+    ) external onlyOwner {
+        require(assets[tokenId].price == 0, "RWA: asset exists");
+
+        assets[tokenId] = Asset({
+            price: price,
+            minRaise: minRaise,
+            maxRaise: maxRaise,
+            totalRaised: 0,
+            deadline: deadline,
+            endTime: deadline + duration,
+            running: false,
+            finished: false
+        });
+
+        emit AssetRegistered(tokenId);
+    }
+
+    // ===== 更新分红 =====
+    function _updateProfit(uint256 id, address user) internal {
+        if (user == address(0)) return;
+
+        uint256 bal = balanceOf(user, id);
+        if (bal == 0) {
+            profitDebt[id][user] = 0; // 清理边界
+            return;
+        }
+
+        uint256 accumulated = (bal * accProfitPerShare[id]) / ACC;
+        uint256 owing = accumulated - profitDebt[id][user];
+
+        if (owing > 0) {
+            pending[id][user] += owing;
+        }
+
+        profitDebt[id][user] = accumulated;
+    }
+
+    // ===== 认购 =====
+    function subscribe(uint256 id, uint256 usdtAmount) external nonReentrant {
+        Asset storage a = assets[id];
+        require(block.timestamp < a.deadline, "RWA: ended");
+        require(whitelisted[msg.sender], "RWA: no KYC");
+        require(a.totalRaised + usdtAmount <= a.maxRaise, "RWA: over raise");
+        require(usdtAmount % a.price == 0, "RWA: invalid amount");
+
+        // 计算 token 数量
+        uint256 amount = usdtAmount / a.price;
+
+        // 转 USDT 到合约
+        usdt.safeTransferFrom(msg.sender, address(this), usdtAmount);
+
+        // 更新募集记录
+        a.totalRaised += usdtAmount;
+        investedAmount[id][msg.sender] += usdtAmount;
+
+        // Mint ERC1155
+        _mint(msg.sender, id, amount, "");
+
+        emit Subscribed(msg.sender, id, usdtAmount);
+    }
+
+    // ===== 启动资产 =====
+    function startAsset(uint256 id) external onlyOwner {
+        Asset storage a = assets[id];
+        require(a.totalRaised >= a.minRaise, "RWA: below minRaise");
+        require(!a.running, "RWA: already running");
+
+        a.running = true;
+
+        emit AssetStarted(id);
+    }
+
+    // ===== 注入利润 =====
+    function injectProfit(uint256 id, uint256 amount) external onlyOwner {
+        Asset storage a = assets[id];
+        require(a.running, "RWA: not running");
+
+        uint256 supply = totalSupply(id);
+        require(supply > 0, "RWA: no holders");
+
+        // 转 USDT 到合约
+        usdt.safeTransferFrom(msg.sender, address(this), amount);
+
+        // 更新分红
+        accProfitPerShare[id] += (amount * ACC) / supply;
+
+        emit ProfitInjected(id, amount);
+    }
+
+    // ===== 领取分红 =====
+    function claim(uint256 id) external nonReentrant {
+        _updateProfit(id, msg.sender);
+
+        uint256 amt = pending[id][msg.sender];
+        require(amt > 0, "RWA: no profit");
+
+        pending[id][msg.sender] = 0;
+
+        usdt.safeTransfer(msg.sender, amt);
+
+        emit Claimed(msg.sender, id, amt);
+    }
+
+    // ===== 到期赎回 =====
+    function redeem(uint256 id) external nonReentrant {
+        Asset storage a = assets[id];
+        require(block.timestamp >= a.endTime, "RWA: not ended");
+
+        uint256 bal = balanceOf(msg.sender, id);
+        require(bal > 0, "RWA: no token");
+
+        _updateProfit(id, msg.sender);
+
+        uint256 principal = investedAmount[id][msg.sender];
+        uint256 profit = pending[id][msg.sender];
+
+        pending[id][msg.sender] = 0;
+        investedAmount[id][msg.sender] = 0;
+
+        _burn(msg.sender, id, bal);
+
+        usdt.safeTransfer(msg.sender, principal + profit);
+
+        if (totalSupply(id) == 0) {
+            a.finished = true;
+        }
+
+        emit Redeemed(msg.sender, id, principal, profit);
+    }
+
+    // ===== 禁止非铸造/销毁转账 & 更新分红 =====
+    function _update(
+        address from,
+        address to,
+        uint256[] memory ids,
+        uint256[] memory values
+    ) internal override(ERC1155, ERC1155Supply) {
+
+        for (uint256 i = 0; i < ids.length; i++) {
+            require(
+                from == address(0) || to == address(0),
+                "RWA: non-transferable"
+            );
+
+            _updateProfit(ids[i], from);
+            _updateProfit(ids[i], to);
+        }
+
+        super._update(from, to, ids, values);
+    }
+}
+
+```

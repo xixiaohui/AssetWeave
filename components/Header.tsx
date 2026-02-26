@@ -29,14 +29,17 @@ export default function Header() {
           <Link href="/assets" style={{ textDecoration: "none" }}>
             <Button variant="text">资产市场</Button>
           </Link>
+          <Link href="/assets" style={{ textDecoration: "none" }}>
+            <Button variant="text">平台管理</Button>
+          </Link>
           <Link href="/portfolio" style={{ textDecoration: "none" }}>
-            <Button variant="text">持仓</Button>
+            <Button variant="text">链上协议</Button>
           </Link>
           <Link href="/yields" style={{ textDecoration: "none" }}>
-            <Button variant="text">分红</Button>
+            <Button variant="text">投资人</Button>
           </Link>
           <Link href="/issuer" style={{ textDecoration: "none" }}>
-            <Button variant="text">发行资产</Button>
+            <Button variant="text">AW公司</Button>
           </Link>
         </Stack>
 

@@ -1,0 +1,146 @@
+---
+title: RWA ERC20合约
+description: 已废弃 0xE3C0573089b8c2C6B62c38a7E3B28c935C763F56
+date: "2026-02-25"
+tags: [solidity,RWA, Web3, Next.js,ERC20]
+cover: /images/rwa-cover.jpg
+---
+
+```ts
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+
+contract RWAProtocolV2 is ERC20, Ownable, ReentrancyGuard {
+    constructor()
+        ERC20("RWA Asset Token", "RWA")
+        Ownable(msg.sender)
+    {}
+
+    // ========= 资产注册 =========
+
+    struct Asset {
+        string assetId;
+        string docHash;
+        uint256 totalIssued;
+        bool exists;
+    }
+
+    mapping(string => Asset) public assets;
+
+    function registerAsset(
+        string memory assetId,
+        string memory docHash
+    ) external onlyOwner {
+        require(!assets[assetId].exists, "Asset exists");
+
+        assets[assetId] = Asset({
+            assetId: assetId,
+            docHash: docHash,
+            totalIssued: 0,
+            exists: true
+        });
+    }
+
+    // ========= 发行 =========
+
+    function issueToken(
+        string memory assetId,
+        uint256 amount
+    ) external onlyOwner {
+        require(assets[assetId].exists, "Asset not found");
+
+        assets[assetId].totalIssued += amount;
+        _mint(owner(), amount);
+    }
+
+    function mintToUser(address user, uint256 amount) external onlyOwner {
+        _transfer(owner(), user, amount);
+    }
+
+    // ========= ⭐ 审计级分红模型（OZ v5 适配） =========
+
+    uint256 private constant ACCURACY = 1e18;
+
+    uint256 public accProfitPerToken;
+
+    mapping(address => uint256) public profitDebt;
+    mapping(address => uint256) public pendingProfit;
+
+    event ProfitDistributed(uint256 amount);
+    event ProfitClaimed(address indexed user, uint256 amount);
+
+    function distributeProfit() external payable onlyOwner {
+        require(totalSupply() > 0, "No tokens");
+
+        accProfitPerToken += (msg.value * ACCURACY) / totalSupply();
+
+        emit ProfitDistributed(msg.value);
+    }
+
+    function _updateProfit(address user) internal {
+        if (user == address(0)) return;
+
+        uint256 accumulated =
+            (balanceOf(user) * accProfitPerToken) / ACCURACY;
+
+        uint256 pending = accumulated - profitDebt[user];
+
+        if (pending > 0) {
+            pendingProfit[user] += pending;
+        }
+
+        profitDebt[user] = accumulated;
+    }
+
+    // 🔥 OZ v5 核心 Hook（替代 beforeTokenTransfer）
+    function _update(
+        address from,
+        address to,
+        uint256 amount
+    ) internal override {
+        _updateProfit(from);
+        _updateProfit(to);
+
+        super._update(from, to, amount);
+    }
+
+    // ========= 查询 =========
+
+    function dividendOf(address user) public view returns (uint256) {
+        return (balanceOf(user) * accProfitPerToken) / ACCURACY;
+    }
+
+    function claimableOf(address user) public view returns (uint256) {
+        uint256 accumulated =
+            (balanceOf(user) * accProfitPerToken) / ACCURACY;
+
+        return pendingProfit[user] + (accumulated - profitDebt[user]);
+    }
+
+    // ========= 领取 =========
+
+    function claimProfit() external nonReentrant {
+        _updateProfit(msg.sender);
+
+        uint256 claimable = pendingProfit[msg.sender];
+        require(claimable > 0, "Nothing to claim");
+
+        pendingProfit[msg.sender] = 0;
+
+        (bool ok, ) = payable(msg.sender).call{value: claimable}("");
+        require(ok, "ETH transfer failed");
+
+        emit ProfitClaimed(msg.sender, claimable);
+    }
+
+    // ========= 销毁 =========
+
+    function burnFromUser(address user, uint256 amount) external onlyOwner {
+        _burn(user, amount);
+    }
+}
+```

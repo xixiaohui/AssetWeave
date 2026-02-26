@@ -125,6 +125,7 @@ const components = {
       {children}
     </Box>
   ),
+  
 } satisfies MDXComponents
 
 export function useMDXComponents(): MDXComponents {
