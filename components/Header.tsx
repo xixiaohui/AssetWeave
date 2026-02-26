@@ -38,8 +38,8 @@ export default function Header() {
           <Link href="/yields" style={{ textDecoration: "none" }}>
             <Button variant="text">投资人</Button>
           </Link>
-          <Link href="/issuer" style={{ textDecoration: "none" }}>
-            <Button variant="text">AW公司</Button>
+          <Link href="/devlog" style={{ textDecoration: "none" }}>
+            <Button variant="text">开发记录</Button>
           </Link>
         </Stack>
 

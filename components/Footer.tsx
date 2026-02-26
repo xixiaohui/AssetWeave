@@ -3,7 +3,6 @@
 import { Box, Stack, Typography, Link as MuiLink, IconButton, Link } from "@mui/material";
 
 import FavoriteIcon from '@mui/icons-material/Favorite';
-import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import Image from "next/image";
 
 
