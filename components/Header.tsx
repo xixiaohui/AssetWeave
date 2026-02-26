@@ -29,7 +29,7 @@ export default function Header() {
           <Link href="/assets" style={{ textDecoration: "none" }}>
             <Button variant="text">资产市场</Button>
           </Link>
-          <Link href="/assets" style={{ textDecoration: "none" }}>
+          <Link href="/admin/rwa" style={{ textDecoration: "none" }}>
             <Button variant="text">平台管理</Button>
           </Link>
           <Link href="/portfolio" style={{ textDecoration: "none" }}>

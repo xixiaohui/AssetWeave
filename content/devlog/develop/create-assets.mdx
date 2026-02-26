@@ -1,0 +1,285 @@
+---
+title: RWA 发布资产
+description: RWA 自建 PostgreSQL + 已部署 XUSDT + RWA 合约
+date: "2026-02-26"
+tags: [RWA, Web3, Next.js]
+cover: /images/rwa-cover.jpg
+---
+
+> 资产方提交资料
+      ↓
+> 后台审核
+      ↓
+> 链上创建资产 Token
+      ↓
+> 生成募资页面
+      ↓
+> 投资人认购
+      ↓
+> 募集完成 / 到期分红
+
+### 1.创建资产主要用到的合约方法是什么？
+
+```ts
+// ===== 注册资产 =====
+    function registerAsset(
+        uint256 tokenId,
+        uint256 price,
+        uint256 minRaise,
+        uint256 maxRaise,
+        uint256 deadline,
+        uint256 duration
+    ) external onlyOwner {
+        require(assets[tokenId].price == 0, "RWA: asset exists");
+
+        assets[tokenId] = Asset({
+            price: price,
+            minRaise: minRaise,
+            maxRaise: maxRaise,
+            totalRaised: 0,
+            deadline: deadline,
+            endTime: deadline + duration,
+            running: false,
+            finished: false
+        });
+
+        emit AssetRegistered(tokenId);
+    }
+```
+
+“创建资产”其实就是调用 registerAsset()!!!
+创建资产 = 初始化一个新的 tokenId
+
+### 2.完整资产生命周期
+
+registerAsset
+    ↓
+subscribe (投资人购买)
+    ↓
+startAsset (管理员启动)
+    ↓
+injectProfit (分红)
+    ↓
+claim (领取收益)
+    ↓
+redeem (到期赎回)
+
+建议：
+Factory 合约
+   ↓
+每个资产独立合约
+
+### 3.数据库结构建议（Supabase / PostgreSQL）
+```sql
+CREATE TABLE assets (
+  -- 基础标识
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  token_id SERIAL UNIQUE,
+
+  -- 基础信息
+  name TEXT NOT NULL,
+  category TEXT NOT NULL, -- real_estate / solar / receivable
+  description TEXT,
+  cover_url TEXT,
+  whitepaper_url TEXT,
+
+  -- 融资核心参数
+  price NUMERIC(20,6) NOT NULL,           -- 单份价格
+  min_raise NUMERIC(20,2) NOT NULL,       -- 最低募集金额
+  max_raise NUMERIC(20,2) NOT NULL,       -- 最高募集金额
+  total_raised NUMERIC(20,2) DEFAULT 0,   -- 当前已募集金额
+
+  -- 收益与周期
+  apy NUMERIC(5,2),                       -- 年化收益率 %
+  duration_days INTEGER NOT NULL,         -- 投资期限（天）
+  start_time TIMESTAMP,                   -- 募集开始时间
+  end_time TIMESTAMP,                     -- 募集结束时间
+
+  -- 链上相关
+  token_symbol TEXT,
+  token_address TEXT,
+  chain_id INTEGER,
+  contract_tx_hash TEXT,
+  deployed_at TIMESTAMP,
+
+  -- 发行方
+  issuer_id UUID,
+
+  -- 状态流控制
+  status TEXT DEFAULT 'draft', -- draft / pending_review / approved / raising / sold_out / expired / repaying / finished / rejected
+
+  -- 时间控制
+  created_at TIMESTAMP DEFAULT now(),
+  updated_at TIMESTAMP DEFAULT now()
+);
+> 添加索引（非常重要）
+CREATE INDEX idx_assets_status ON assets(status);
+CREATE INDEX idx_assets_category ON assets(category);
+CREATE INDEX idx_assets_created_at ON assets(created_at DESC);
+否则以后列表页会慢。
+
+> 添加自动更新时间触发器
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+CREATE TRIGGER update_assets_updated_at
+BEFORE UPDATE ON assets
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
+
+```
+
+
+### 4.后端 createAsset API（核心）
+app/api/assets/create/route.ts
+
+
+### 5.发布资产完整流程图
+管理员填写表单
+      ↓
+
+点击发布
+      ↓
+
+API 调用 registerAsset
+      ↓
+
+链上交易成功
+      ↓
+
+数据库写入
+      ↓
+
+前端公开展示
+
+### 6.下一阶段建议做：
+
+
+1️⃣ 创建资产 API
+
+2️⃣ 资产列表 API
+
+3️⃣ 资产详情 API
+
+4️⃣ 审核状态流
+
+5️⃣ 发行批次创建
+
+6️⃣ 对接链上部署
+
+### 7.为什么 create API 不建议直接部署链上？
+因为：
+
+创建资产 ≠ 立即发行
+
+资产可能被审核驳回
+
+参数可能修改
+
+部署合约是不可逆行为
+
+区块链部署一旦发出：
+
+不能删除
+不能回滚
+不能修改
+
+所以正确做法是：
+
+创建资产只存数据库
+审核通过后单独调用 deploy API
+
+推荐架构
+-创建资产
+> POST /api/assets/create
+-审核通过
+> PATCH /api/assets/:id/approve
+-部署合约（关键）
+POST /api/assets/:id/deploy
+
+但是我们的合约不需要这样做，推荐这样的流程
+
+- 数据库创建资产
+↓
+
+- 审核通过
+↓
+
+- 调用 registerAsset(tokenId, ...)
+↓
+
+- 用户 subscribe
+
+### 8.如何调用 registerAsset(tokenId,...)
+
+> app/api/assets/[id]/register/route.ts
+```ts
+import { NextRequest, NextResponse } from "next/server";
+import { ethers } from "ethers";
+import pool from "@/lib/db"; // 数据库
+import { getRWAPlatformContract } from "@/lib/rwaPlatformContract"; 
+
+export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    // 1️⃣ 获取资产信息
+    const assetRes = await client.query("SELECT * FROM assets WHERE id=$1 FOR UPDATE", [params.id]);
+    if (assetRes.rowCount === 0) return NextResponse.json({ error: "Asset not found" }, { status: 404 });
+    
+    const asset = assetRes.rows[0];
+
+    if (asset.status !== "approved") {
+      return NextResponse.json({ error: "Asset not approved" }, { status: 400 });
+    }
+
+    // 2️⃣ 链上调用
+    const contract = getRWAPlatformContract();
+
+    // 3️⃣ 计算 deadline 和 duration
+    const deadline = Math.floor(new Date(asset.start_time).getTime() / 1000);
+    const duration = asset.duration_days * 24 * 60 * 60;
+
+    const tx = await contract.registerAsset(
+      asset.token_id,
+      ethers.parseUnits(asset.price.toString(), 6),    // USDT 6 decimals
+      ethers.parseUnits(asset.min_raise.toString(), 6),
+      ethers.parseUnits(asset.max_raise.toString(), 6),
+      deadline,
+      duration
+    );
+
+    const receipt = await tx.wait(); // 等待交易上链
+
+    // 4️⃣ 更新数据库状态
+    await client.query("UPDATE assets SET status='raising' WHERE id=$1", [params.id]);
+    await client.query("COMMIT");
+
+    return NextResponse.json({ success: true, txHash: receipt.transactionHash });
+
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error(error);
+    return NextResponse.json({ error: "Failed to register asset" }, { status: 500 });
+  } finally {
+    client.release();
+  }
+}
+```
+
+| 参数       | 含义                              |
+| -------- | ------------------------------- |
+| tokenId  | 数据库分配的唯一 ID                     |
+| price    | 1 token 的价格（USDT最小单位）           |
+| minRaise | 最低募集金额                          |
+| maxRaise | 最高募集金额                          |
+| deadline | 募集截止时间（unix 时间戳）                |
+| duration | 赎回截止时间 = deadline + duration（秒） |
+
