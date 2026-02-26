@@ -1,22 +1,35 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ethers } from "ethers";
 import pool from "@/lib/db"; // 数据库
-import { getRWAPlatformContract } from "@/lib/rwaPlatformContract"; 
+import { getRWAPlatformContract } from "@/lib/rwaPlatformContract";
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> },
+) {
+  const { params } = context;
+  const { id } = await params; // ✅ 需要 await 获取 id
+
   const client = await pool.connect();
 
   try {
     await client.query("BEGIN");
 
     // 1️⃣ 获取资产信息
-    const assetRes = await client.query("SELECT * FROM assets WHERE id=$1 FOR UPDATE", [params.id]);
-    if (assetRes.rowCount === 0) return NextResponse.json({ error: "Asset not found" }, { status: 404 });
-    
+    const assetRes = await client.query(
+      "SELECT * FROM assets WHERE id=$1 FOR UPDATE",
+      [id],
+    );
+    if (assetRes.rowCount === 0)
+      return NextResponse.json({ error: "Asset not found" }, { status: 404 });
+
     const asset = assetRes.rows[0];
 
     if (asset.status !== "approved") {
-      return NextResponse.json({ error: "Asset not approved" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Asset not approved" },
+        { status: 400 },
+      );
     }
 
     // 2️⃣ 链上调用
@@ -28,25 +41,32 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
     const tx = await contract.registerAsset(
       asset.token_id,
-      ethers.parseUnits(asset.price.toString(), 6),    // USDT 6 decimals
+      ethers.parseUnits(asset.price.toString(), 6), // USDT 6 decimals
       ethers.parseUnits(asset.min_raise.toString(), 6),
       ethers.parseUnits(asset.max_raise.toString(), 6),
       deadline,
-      duration
+      duration,
     );
 
     const receipt = await tx.wait(); // 等待交易上链
 
     // 4️⃣ 更新数据库状态
-    await client.query("UPDATE assets SET status='raising' WHERE id=$1", [params.id]);
+    await client.query("UPDATE assets SET status='raising' WHERE id=$1", [
+      id,
+    ]);
     await client.query("COMMIT");
 
-    return NextResponse.json({ success: true, txHash: receipt.transactionHash });
-
+    return NextResponse.json({
+      success: true,
+      txHash: receipt.transactionHash,
+    });
   } catch (error) {
     await client.query("ROLLBACK");
     console.error(error);
-    return NextResponse.json({ error: "Failed to register asset" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to register asset" },
+      { status: 500 },
+    );
   } finally {
     client.release();
   }
