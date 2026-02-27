@@ -69,7 +69,9 @@ Factory 合约
    ↓
 每个资产独立合约
 
-### 3.数据库结构建议（Supabase / PostgreSQL）
+当前还不是Factory合约,当前是1份合约可以对应多资产
+
+### 3.数据库结构建议（PostgreSQL）
 ```sql
 CREATE TABLE assets (
   -- 基础标识
@@ -143,7 +145,7 @@ app/api/assets/create/route.ts
 管理员填写表单
       ↓
 
-点击发布
+点击发布,提交到服务器，审核通过后
       ↓
 
 API 调用 registerAsset
@@ -152,7 +154,7 @@ API 调用 registerAsset
 链上交易成功
       ↓
 
-数据库写入
+数据库再次写入链上操作的部分字段，更改状态流
       ↓
 
 前端公开展示
@@ -170,7 +172,6 @@ API 调用 registerAsset
 
 5️⃣ 发行批次创建
 
-6️⃣ 对接链上部署
 
 ### 7.为什么 create API 不建议直接部署链上？
 因为：
@@ -273,13 +274,3 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   }
 }
 ```
-
-| 参数       | 含义                              |
-| -------- | ------------------------------- |
-| tokenId  | 数据库分配的唯一 ID                     |
-| price    | 1 token 的价格（USDT最小单位）           |
-| minRaise | 最低募集金额                          |
-| maxRaise | 最高募集金额                          |
-| deadline | 募集截止时间（unix 时间戳）                |
-| duration | 赎回截止时间 = deadline + duration（秒） |
-

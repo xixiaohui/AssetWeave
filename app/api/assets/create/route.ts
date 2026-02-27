@@ -62,6 +62,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    if (Number(max_raise) < Number(price)) {
+      return NextResponse.json(
+        { error: "max_raise must be >= price" },
+        { status: 400 }
+      );
+    }
+
     // =============================
     // 2️⃣ 自动计算 end_time
     // =============================

@@ -7,14 +7,19 @@ export async function GET() {
   const { rows } = await pool.query(`
     SELECT
       a.id,
-      a.title,
-      a.asset_type,
-      a.total_value,
-      t.total_supply,
-      t.price_per_token
+      a.name,
+      a.category,
+      a.cover_url,
+      a.price,
+      a.max_raise,
+      a.total_raised,
+      a.apy,
+      a.duration_days,
+      a.token_symbol,
+      a.status,
+      a.created_at
     FROM assets a
-    JOIN tokens t ON t.asset_id = a.id
-    WHERE a.status = 'active'
+    WHERE a.status = 'raising'
     ORDER BY a.created_at DESC
   `);
 
