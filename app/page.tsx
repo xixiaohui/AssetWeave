@@ -89,7 +89,7 @@ export default function Home() {
             <Grid size={{ xs: 12, md: 6 }}>
               <NavCard
                 title="我的持仓"
-                desc="查看您的持仓和当前市场价值"
+                desc="查看您的持仓和当前市场价值(认购的资产token会显示在这里)"
                 href="/portfolio"
                 button="了解更多"
               />
@@ -106,10 +106,11 @@ export default function Home() {
 
             <Grid size={{ xs: 12, md: 6 }}>
               <NavCard
-                title="发行资产"
-                desc="创建并代币化一种新的现实世界资产"
-                href="/issuer"
+                title="创建资产"
+                desc="创建并代币化一种新的现实世界资产，在审核通过后上链交易(平台是资产的发行人)"
+                href="/assets/create"
                 button="了解更多"
+                backgroundColor="#def8b3"
               />
             </Grid>
           </Grid>
@@ -117,8 +118,6 @@ export default function Home() {
       </Box>
 
       {/* <TestRWA></TestRWA> */}
-
-      
 
     </Box>
   );
@@ -129,11 +128,13 @@ function NavCard({
   desc,
   href,
   button,
+  backgroundColor='grey.500',
 }: {
   title: string;
   desc: string;
   href: string;
   button: string;
+  backgroundColor?:string;
 }) {
   return (
     <Card
@@ -141,6 +142,7 @@ function NavCard({
         borderRadius: 4,
         height: "100%",
         transition: "0.25s",
+        backgroundColor:{backgroundColor},
         "&:hover": {
           boxShadow: 8,
           transform: "translateY(-6px)",

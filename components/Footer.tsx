@@ -123,9 +123,6 @@ export default function Footer() {
 
           <Stack spacing={1}>
             <Typography fontWeight={600}>AW公司</Typography>
-            <MuiLink href="/devlog" color="grey.500" underline="hover">
-              开发记录
-            </MuiLink>
             <MuiLink href="#" color="grey.500" underline="hover">
               关于我们
             </MuiLink>
@@ -137,6 +134,9 @@ export default function Footer() {
             </MuiLink>
             <MuiLink href="/investor" color="grey.500" underline="hover">
               投资人看板
+            </MuiLink>
+            <MuiLink href="/devlog" color="orange" underline="hover">
+              开发记录
             </MuiLink>
 
           </Stack>
