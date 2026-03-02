@@ -12,7 +12,7 @@ import {
   CardContent,
 } from "@mui/material";
 
-export default function AssetDetailClient({ asset }: any) {
+export default function AssetBuyPage({ asset }: any) {
   const [amount, setAmount] = useState(10);
 
   const buy = async () => {
@@ -40,11 +40,11 @@ export default function AssetDetailClient({ asset }: any) {
           <Stack spacing={3}>
             {/* Asset Title & Description */}
             <Typography variant="h4" fontWeight={700}>
-              {asset.title}
+              {asset.name}
             </Typography>
             <Typography color="text.secondary">{asset.description}</Typography>
             <Typography variant="h6">
-              单价：¥{Number(asset.price_per_token).toLocaleString()}
+              单价：¥{Number(asset.price).toLocaleString()}
             </Typography>
 
             {/* Purchase Amount */}

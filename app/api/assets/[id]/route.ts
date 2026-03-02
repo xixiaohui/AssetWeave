@@ -8,18 +8,30 @@ export async function GET(
 
   const { id } = await context.params;
 
+  console.log(id)
+
   const { rows } = await pool.query(
     `
     SELECT
-      a.*,
-      t.id as token_id,
-      t.total_supply,
-      t.price_per_token
+      a.id,
+      a.name,
+      a.description,
+      a.category,
+      a.cover_url,
+      a.whitepaper_url,
+      a.price,
+      a.min_raise,
+      a.max_raise,
+      a.total_raised,
+      a.apy,
+      a.duration_days,
+      a.token_symbol,
+      a.status,
+      a.created_at
     FROM assets a
-    JOIN tokens t ON t.asset_id = a.id
     WHERE a.id = $1
   `,
-    [id]
+    [id],
   );
 
   return NextResponse.json(rows[0]);

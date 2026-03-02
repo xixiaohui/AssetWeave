@@ -8,9 +8,12 @@ export async function GET() {
     SELECT
       a.id,
       a.name,
+      a.description,
       a.category,
       a.cover_url,
+      a.whitepaper_url,
       a.price,
+      a.min_raise,
       a.max_raise,
       a.total_raised,
       a.apy,
@@ -19,8 +22,7 @@ export async function GET() {
       a.status,
       a.created_at
     FROM assets a
-    WHERE a.status = 'raising'
-    ORDER BY a.created_at DESC
+    ORDER BY a.created_at ASC
   `);
 
   return NextResponse.json(rows);

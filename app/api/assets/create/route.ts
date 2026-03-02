@@ -8,6 +8,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
 
     const {
+      is_perpetual,
       name,
       category,
       description,
@@ -29,63 +30,65 @@ export async function POST(req: NextRequest) {
 
     if (!name || !category) {
       return NextResponse.json(
-        { error: "Name and category are required" },
+        { error: "资产名称和类别必填" },
         { status: 400 }
       );
     }
 
-    if (!price || !min_raise || !max_raise || !duration_days) {
+    if (!price || !min_raise || !max_raise) {
       return NextResponse.json(
-        { error: "Missing financing parameters" },
+        { error: "价格/最低募集/最高募集金额必填" },
         { status: 400 }
       );
     }
 
     if (Number(price) <= 0) {
       return NextResponse.json(
-        { error: "Price must be greater than 0" },
+        { error: "单份价格必须大于 0" },
         { status: 400 }
       );
     }
 
     if (Number(min_raise) > Number(max_raise)) {
       return NextResponse.json(
-        { error: "min_raise cannot exceed max_raise" },
-        { status: 400 }
-      );
-    }
-
-    if (Number(duration_days) <= 0) {
-      return NextResponse.json(
-        { error: "duration_days must be positive" },
+        { error: "最低募集金额不能大于最高募集金额" },
         { status: 400 }
       );
     }
 
     if (Number(max_raise) < Number(price)) {
       return NextResponse.json(
-        { error: "max_raise must be >= price" },
+        { error: "最高募集金额必须 >= 单份价格" },
         { status: 400 }
       );
     }
 
-    // =============================
-    // 2️⃣ 自动计算 end_time
-    // =============================
+    // duration_days 只有非永续时才校验
+    let finalDuration: number | null = null;
+    let computedEndTime: Date | null = null;
 
-    let computedEndTime = null;
+    if (!is_perpetual) {
+      if (!duration_days || Number(duration_days) <= 0) {
+        return NextResponse.json(
+          { error: "投资期限必须为正数" },
+          { status: 400 }
+        );
+      }
+      finalDuration = Number(duration_days);
 
-    if (start_time) {
-      const start = new Date(start_time);
-      const end = new Date(start);
-      end.setDate(end.getDate() + Number(duration_days));
-      computedEndTime = end;
+      // 自动计算 end_time
+      if (start_time) {
+        const start = new Date(start_time);
+        const end = new Date(start);
+        end.setDate(end.getDate() + finalDuration);
+        computedEndTime = end;
+      }
     }
 
     await client.query("BEGIN");
 
     // =============================
-    // 3️⃣ 插入资产
+    // 2️⃣ 插入资产
     // =============================
 
     const insertQuery = `
@@ -120,17 +123,17 @@ export async function POST(req: NextRequest) {
     const result = await client.query(insertQuery, [
       name,
       category,
-      description,
-      cover_url,
-      whitepaper_url,
+      description || null,
+      cover_url || null,
+      whitepaper_url || null,
       price,
       min_raise,
       max_raise,
-      apy,
-      duration_days,
+      apy || null,
+      finalDuration,
       start_time || null,
       computedEndTime,
-      token_symbol,
+      token_symbol || null,
       issuer_id,
     ]);
 
@@ -146,7 +149,7 @@ export async function POST(req: NextRequest) {
     console.error("Create asset error:", error);
 
     return NextResponse.json(
-      { error: "Internal Server Error" },
+      { error: "服务器内部错误" },
       { status: 500 }
     );
   } finally {

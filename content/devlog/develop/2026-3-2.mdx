@@ -1,0 +1,90 @@
+---
+title: 如何新建资产
+description: 
+date: "2026-03-02"
+tags: [RWA, Web3, Next.js]
+cover: /images/rwa-cover.jpg
+---
+
+## 1.在创建资产页面提交信息到Postgresql
+
+> page页面
+/assets/create
+
+> 字段信息
+
+
+```sql
+CREATE TABLE assets (
+  -- 基础标识
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  token_id SERIAL UNIQUE,
+
+  -- 基础信息
+  name TEXT NOT NULL,
+  category TEXT NOT NULL, -- real_estate / solar / receivable
+  description TEXT,
+  cover_url TEXT,
+  whitepaper_url TEXT,
+
+  -- 融资核心参数
+  price NUMERIC(20,6) NOT NULL,           -- 单份价格
+  min_raise NUMERIC(20,2) NOT NULL,       -- 最低募集金额
+  max_raise NUMERIC(20,2) NOT NULL,       -- 最高募集金额
+  total_raised NUMERIC(20,2) DEFAULT 0,   -- 当前已募集金额
+
+  -- 收益与周期
+  apy NUMERIC(5,2),                       -- 年化收益率 %
+  duration_days INTEGER NOT NULL,         -- 投资期限（天）
+  start_time TIMESTAMP,                   -- 募集开始时间
+  end_time TIMESTAMP,                     -- 募集结束时间
+
+  -- 链上相关
+  token_symbol TEXT,
+  token_address TEXT,
+  chain_id INTEGER,
+  contract_tx_hash TEXT,
+  deployed_at TIMESTAMP,
+
+  -- 发行方
+  issuer_id UUID,
+
+  -- 状态流控制
+  status TEXT DEFAULT 'draft', -- draft / pending_review / approved / raising / sold_out / expired / repaying / finished / rejected
+
+  -- 时间控制
+  created_at TIMESTAMP DEFAULT now(),
+  updated_at TIMESTAMP DEFAULT now()
+);
+```
+
+
+## 2. 平台审核资产，通过后资产上链，调用合约方法registerAsset
+
+```ts
+// ===== 注册资产 =====
+    function registerAsset(
+        uint256 tokenId,
+        uint256 price,
+        uint256 minRaise,
+        uint256 maxRaise,
+        uint256 deadline,
+        uint256 duration
+    ) external onlyOwner {
+        require(assets[tokenId].price == 0, "RWA: asset exists");
+
+        assets[tokenId] = Asset({
+            price: price,
+            minRaise: minRaise,
+            maxRaise: maxRaise,
+            totalRaised: 0,
+            deadline: deadline,
+            endTime: deadline + duration,
+            running: false,
+            finished: false
+        });
+
+        emit AssetRegistered(tokenId);
+    }
+
+```
