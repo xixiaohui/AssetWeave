@@ -342,7 +342,7 @@ export default function CreateAssetPage() {
             control={control}
             render={({ field }) => (
               <TextField
-                label="募集开始时间"
+                label="募集截止时间"
                 type="datetime-local"
                 {...field}
                 InputLabelProps={{ shrink: true }}

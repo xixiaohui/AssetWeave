@@ -1,0 +1,172 @@
+---
+title: 追踪链上资产
+description: 数据库有哪些字段可以用来追踪链上资产，链上资产到底是个什么样子
+date: "2026-03-03"
+tags: [RWA, Web3, Next.js]
+cover: /images/rwa-cover.jpg
+---
+
+
+## 1.如何追踪链上资产
+
+整体逻辑
+
+当你：
+
+1️⃣ 后台创建资产
+
+2️⃣ 部署或绑定一个链上合约
+
+3️⃣ 在测试网（如 Sepolia）发行 Token
+
+数据库里就必须记录：
+
+- 发行的是哪个链
+- 合约地址是多少
+- 代币符号是什么
+- 部署交易哈希是什么
+- 部署时间
+
+```sql
+  -- 链上相关
+  token_symbol TEXT,  -- 代币符号 XUSDT
+  token_address TEXT,  -- 合约地址platform1155的 0xCeDe98d5B92dc354Eb1d544be3481C516D18ea8E
+  chain_id INTEGER,  -- 链ID Sepolia -> 11155111
+  contract_tx_hash TEXT,  -- 部署交易哈希 0x2eb8d03492a216e6b232896d7f7772cae4d95f6168b96c2ac100aa8dd4b86737
+  deployed_at TIMESTAMP,  -- 部署时间
+```
+```ts
+
+| 字段               | 本质    |
+| ---------------- | ----- |
+| token_symbol     | 代币名字  |
+| token_address    | 合约身份证 |
+| chain_id         | 在哪条链  |
+| contract_tx_hash | 出生证明  |
+| deployed_at      | 出生时间  |
+
+```
+
+## 2. 链上资产的从上面这几个字段还查不到
+需要增加
+
+```sql
+register_tx_hash TEXT,
+register_block_number INTEGER,
+register_gas_used NUMERIC
+```
+
+```tsx
+await client.query(`
+  UPDATE assets
+  SET 
+    status='raising',
+    register_tx_hash=$1,
+    register_block_number=$2
+  WHERE id=$3
+`, [
+  receipt.transactionHash,
+  receipt.blockNumber,
+  id
+]);
+
+register_tx_hash：注册资产的交易哈希,链上资产注册行为的“区块链收据编号”!!!
+
+```
+```sql
+
+ALTER TABLE assets
+ADD COLUMN register_tx_hash TEXT,
+ADD COLUMN register_block_number INTEGER,
+ADD COLUMN register_gas_used NUMERIC,
+ADD COLUMN register_confirmed_at TIMESTAMP;
+
+CREATE INDEX idx_assets_register_tx_hash
+ON assets(register_tx_hash);
+
+ALTER TABLE assets
+ADD CONSTRAINT unique_token_address UNIQUE (token_address);
+| 字段                    | 作用         |
+| --------------------- | ---------- |
+| register_tx_hash      | 注册资产时的交易哈希 |
+| register_block_number | 区块编号       |
+| register_gas_used     | 消耗的 Gas    |
+| register_confirmed_at | 交易确认时间     |
+
+```
+#### 新增了这一组值之后，提交上链的资产的值如下：
+
+```sql
+register_tx_hash TEXT,--注册资产时的交易哈希 0xfc0e95cec1234dc67cc150b3c4ddb5cac121a70383ab703405901bae29bf5ebb
+register_block_number INTEGER,  --区块编号 10372514
+register_gas_used NUMERIC  --消耗的 Gas 7,488,782
+register_confirmed_at TIMESTAMP --交易确认时间 Mar-03-2026 02:09:48 AM +UTC
+```
+
+
+## 3. 资产上链后，如何通过链上数据追踪资产状态
+
+有 3 种方式 👇
+
+✅ 方法 1：查询合约映射
+```ts
+const asset = await contract.assets(tokenId);
+asset.price > 0
+```
+说明：🎯 已注册成功
+
+✅ 方法 2：查询 txHash
+
+```ts
+receipt.transactionHash
+```
+去区块浏览器查：
+状态 = Success
+没有 revert
+就代表注册成功。
+
+✅ 方法 3：监听事件（最专业）
+
+合约里有
+```ts
+emit AssetRegistered(tokenId);
+```
+监听
+```ts
+contract.on("AssetRegistered", ...)
+```
+
+如果事件被触发：
+说明链上已注册。
+这是最标准Web3判断方式。
+
+## 4.数据库层面怎么判断资产注册成功？
+```ts
+register_tx_hash 不为空
+AND
+status = 'raising'
+```
+
+## 5. 最安全的判断标准（机构级）
+真正安全判断 = 三重确认：
+
+1️⃣ receipt.status === 1
+
+2️⃣ 链上查询 asset.price > 0
+
+3️⃣ 数据库存有 register_tx_hash
+
+
+真正代表注册成功的是：
+链上合约里 assets[tokenId] 已经有值。
+
+```js
+| 数据                   | 是否代表注册成功   |
+| -------------------- | ---------- |
+| status='raising'     | ❌ 不一定      |
+| register_tx_hash 存在  | ⚠️ 可能成功    |
+| receipt.status === 1 | ✅ 基本成功     |
+| 链上查询 asset.price > 0 | 🔥 100% 成功 |
+
+```
+

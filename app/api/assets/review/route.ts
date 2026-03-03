@@ -20,15 +20,21 @@ export async function GET(req: Request) {
   // 默认查询 draft + approved
   const statuses =
     statusParam === "draft"
-      ? ["draft", "approved","pending_review","raising","sold_out","expired","repaying","finished","rejected"]
+      // ? ["draft", "approved","pending_review","raising","sold_out","expired","repaying","finished",""]
+      ? ["draft", "approved","pending_review","sold_out","expired","repaying","finished",""]
       : statusParam
       ? [statusParam]
       : ["draft", "approved"];
 
   const { rows } = await pool.query(
-    `SELECT * FROM assets WHERE status = ANY($1)`,
-    [statuses]
-  );
+  `
+  SELECT *
+  FROM assets
+  WHERE status = ANY($1)
+  ORDER BY created_at DESC
+  `,
+  [statuses]
+);
 
   return NextResponse.json(rows);
 }

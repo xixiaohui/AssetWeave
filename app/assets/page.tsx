@@ -31,6 +31,9 @@ export interface Asset {
   apy?: number; // 年化收益
   duration_days: number; // 投资周期
 
+  start_time?: string; // 募资开始时间
+  end_time?: string; // 募资结束时间
+
   token_symbol?: string;
 
   status: string;
@@ -75,6 +78,7 @@ export default function AssetsPage() {
             ? (a.total_raised / a.max_raise) * 100
             : 0,
         }));
+        // console.log("Fetched assets:", assetsWithProgress);
         setAssets(assetsWithProgress);
       });
   }, []);
@@ -156,6 +160,15 @@ export default function AssetsPage() {
                     <Stack direction="row" justifyContent="space-between">
                       <Typography color="text.secondary">投资周期</Typography>
                       <Typography>{a.duration_days} 天</Typography>
+                    </Stack>
+
+                    <Stack
+                      direction="row"
+                      justifyContent="space-between"
+                      sx={{ width: "100%" }}
+                    >
+                      <Typography color="text.secondary">募资截止时间</Typography>
+                      <Typography>{new Date(a.start_time!).toLocaleDateString()}</Typography>
                     </Stack>
 
                     {/* 代币符号 */}

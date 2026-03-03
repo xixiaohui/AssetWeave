@@ -1,7 +1,5 @@
-
 import pool from "@/lib/db";
 import { NextResponse } from "next/server";
-
 
 export async function GET() {
   const { rows } = await pool.query(`
@@ -20,9 +18,10 @@ export async function GET() {
       a.duration_days,
       a.token_symbol,
       a.status,
-      a.created_at
+      a.created_at,
+      a.start_time
     FROM assets a
-    ORDER BY a.created_at ASC
+    ORDER BY a.created_at DESC
   `);
 
   return NextResponse.json(rows);

@@ -1,3 +1,36 @@
+---
+title: 通过审核的资产如何上链
+description: 在审核页面，管理员可以看到每个资产的状态。当资产状态为“已通过”时，管理员可以点击“提交上链”按钮，将资产信息提交到区块链上。
+date: "2026-03-03"
+tags: [RWA, Web3, Next.js]
+cover: /images/rwa-cover.jpg
+---
+
+
+## 1.审核通过的资产，点击按钮触发上链
+
+
+
+```tsx
+  const handleSubmitOnChain = async (assetId: string) => {
+    try {
+      const res = await fetch(`/api/assets/${assetId}/register`, {
+        method: "POST",
+      });
+      if (!res.ok) throw new Error("提交上链失败");
+      alert("资产已提交上链！");
+      // 可刷新列表
+      setAssets((prev) => prev.filter((a) => a.id !== assetId));
+    } catch (err: any) {
+      alert(err.message || "操作失败");
+    }
+  };
+```
+
+## 2.后端接口处理上链逻辑
+
+```ts
+// pages/api/assets/[id]/register/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { ethers } from "ethers";
 import pool from "@/lib/db"; // 数据库
@@ -51,31 +84,14 @@ export async function POST(
     const receipt = await tx.wait(); // 等待交易上链
 
     // 4️⃣ 更新数据库状态
-    await client.query(
-      `
-      UPDATE assets
-      SET 
-        status = 'raising',
-        register_tx_hash = $1,
-        register_block_number = $2,
-        register_gas_used = $3,
-        register_confirmed_at = NOW()
-      WHERE id = $4
-    `,
-      [
-        receipt.transactionHash,
-        receipt.blockNumber,
-        receipt.gasUsed.toString(),
-        id,
-      ],
-    );
-
+    await client.query("UPDATE assets SET status='raising' WHERE id=$1", [
+      id,
+    ]);
     await client.query("COMMIT");
 
     return NextResponse.json({
       success: true,
       txHash: receipt.transactionHash,
-      blockNumber:receipt.blockNumber,
     });
   } catch (error) {
     await client.query("ROLLBACK");
@@ -88,3 +104,35 @@ export async function POST(
     client.release();
   }
 }
+
+```
+
+## 3.注册资产的合约函数
+
+```solidity
+
+// ===== 注册资产 =====
+    function registerAsset(
+        uint256 tokenId,
+        uint256 price,
+        uint256 minRaise,
+        uint256 maxRaise,
+        uint256 deadline,
+        uint256 duration
+    ) external onlyOwner {
+        require(assets[tokenId].price == 0, "RWA: asset exists");
+
+        assets[tokenId] = Asset({
+            price: price,
+            minRaise: minRaise,
+            maxRaise: maxRaise,
+            totalRaised: 0,
+            deadline: deadline,
+            endTime: deadline + duration,
+            running: false,
+            finished: false
+        });
+
+        emit AssetRegistered(tokenId);
+    }
+```

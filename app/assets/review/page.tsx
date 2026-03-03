@@ -34,7 +34,9 @@ export default function AssetReviewPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [selectedStatus, setSelectedStatus] = useState<Record<string, string>>({});
+  const [selectedStatus, setSelectedStatus] = useState<Record<string, string>>(
+    {},
+  );
 
   // 获取待审核资产
   useEffect(() => {
@@ -58,7 +60,7 @@ export default function AssetReviewPage() {
   // 提交上链操作
   const handleSubmitOnChain = async (assetId: string) => {
     try {
-      const res = await fetch(`/api/assets/${assetId}/submit_onchain`, {
+      const res = await fetch(`/api/assets/${assetId}/register`, {
         method: "POST",
       });
       if (!res.ok) throw new Error("提交上链失败");
@@ -186,6 +188,15 @@ export default function AssetReviewPage() {
                   <Typography>{asset.duration_days} 天</Typography>
                 </Stack>
 
+                <Stack
+                  direction="row"
+                  justifyContent="space-between"
+                  sx={{ width: "100%" }}
+                >
+                  <Typography color="text.secondary">募资截止时间</Typography>
+                  <Typography>{new Date(asset.start_time!).toLocaleDateString()}</Typography>
+                </Stack>
+
                 {asset.token_symbol && (
                   <Stack
                     direction="row"
@@ -241,17 +252,15 @@ export default function AssetReviewPage() {
                 </Stack>
 
                 <Stack direction="row" spacing={1} justifyContent="flex-end">
-                 
-
                   <FormControl size="small" sx={{ minWidth: 160 }}>
                     <Select
                       value={selectedStatus[asset.id] ?? asset.status}
-                     onChange={(e) =>
+                      onChange={(e) =>
                         setSelectedStatus((prev) => ({
-                            ...prev,
-                            [asset.id]: e.target.value as string,
+                          ...prev,
+                          [asset.id]: e.target.value as string,
                         }))
-                        }
+                      }
                       renderValue={(selected) => {
                         const found = STATUS_OPTIONS.find(
                           (s) => s.value === selected,
@@ -277,7 +286,7 @@ export default function AssetReviewPage() {
 
                   <Button
                     variant="contained"
-                    disabled
+                    disabled={asset.status !== "approved"}
                     color="primary"
                     size="small"
                     onClick={() => handleSubmitOnChain(asset.id)}
