@@ -27,7 +27,9 @@ export async function GET(
       a.duration_days,
       a.token_symbol,
       a.status,
-      a.created_at
+      a.created_at,
+      a.register_tx_hash,
+      a.token_id
     FROM assets a
     WHERE a.id = $1
   `,

@@ -16,6 +16,8 @@ import {
 import { FormControl, Select, MenuItem } from "@mui/material";
 
 import { Asset } from "../page";
+import { TxReceiptCard } from "@/components/TxReceiptCard";
+import { log } from "console";
 
 const STATUS_OPTIONS = [
   { value: "draft", label: "草稿" },
@@ -37,6 +39,35 @@ export default function AssetReviewPage() {
   const [selectedStatus, setSelectedStatus] = useState<Record<string, string>>(
     {},
   );
+
+  const [txResult, setTxResult] = useState<any>({
+    assetId: "9dc3df1d-6cf3-4024-bdba-ff75e0bd7e85",
+    actionType: "register",
+    txHash: "0xd848be84248e3f19bd3e5177f4b081925563222a4c1750951cac3d38c174faf4",
+    blockHash:"0xb44b9c0af3124cafe3528687c922ee458cec1be4741b8b000fbd0b5c51f1c0b0",
+    status: 1, // 1 = success, 0 = fail
+    blockNumber: 10373899,
+    gasUsed: "185432",
+    from: "0xd12478358C37f5E86996eB917558b0ebfCc8A0e1",
+    to: "0xCeDe98d5B92dc354Eb1d544be3481C516D18ea8E",
+    timestamp: Date.now(),
+    logs: [
+      {
+        "_type": "log",
+        "address": "0xCeDe98d5B92dc354Eb1d544be3481C516D18ea8E",
+        "blockHash": "0xb44b9c0af3124cafe3528687c922ee458cec1be4741b8b000fbd0b5c51f1c0b0",
+        "blockNumber": 10373899,
+        "data": "0x",
+        "index": 173,
+        "topics": [
+          "0xcc7b4929606ce963ba54b6a998f106f7748e78c03dc7f08fd77aeb28230eb2d3",
+          "0x000000000000000000000000000000000000000000000000000000000000000a"
+        ],
+        "transactionHash": "0xd848be84248e3f19bd3e5177f4b081925563222a4c1750951cac3d38c174faf4",
+        "transactionIndex": 95
+      }
+    ]
+  });
 
   // 获取待审核资产
   useEffect(() => {
@@ -64,9 +95,23 @@ export default function AssetReviewPage() {
         method: "POST",
       });
       if (!res.ok) throw new Error("提交上链失败");
+
+      const data = await res.json();   // 🔥 解析后端返回
+
+      console.log(data);
+
       alert("资产已提交上链！");
+
       // 可刷新列表
       setAssets((prev) => prev.filter((a) => a.id !== assetId));
+
+      // 🔥 可以把交易结果存到状态里展示
+      setTxResult({
+        ...data,
+        assetId: assetId,
+      });
+
+
     } catch (err: any) {
       alert(err.message || "操作失败");
     }
@@ -123,8 +168,12 @@ export default function AssetReviewPage() {
             <CardContent>
               <Stack spacing={1}>
                 <Typography variant="h6" fontWeight={600}>
-                  {asset.name}
+                  {asset.name} 
                 </Typography>
+                <Typography variant="body2" fontWeight={600}>
+                  资产编号：{asset.token_id}
+                </Typography>
+                
                 <Divider />
                 <Stack direction="row" justifyContent="space-between">
                   <Typography color="text.secondary">类别</Typography>
@@ -295,6 +344,14 @@ export default function AssetReviewPage() {
                   </Button>
                 </Stack>
               </Stack>
+              {/* 👇 只在匹配时显示交易回执 */}
+              {txResult?.assetId === asset.id && (
+                <TxReceiptCard
+                  txResult={txResult}
+                  chainName="Sepolia"
+                  hideLogs={false}
+                />
+              )}
             </CardContent>
           </Card>
         ))}

@@ -34,7 +34,7 @@ export default function AssetBuyPage({ asset }: any) {
   };
 
   return (
-    <Box sx={{ p: 8, maxWidth: 700, mx: "auto" }}>
+    <Box sx={{ mt:7,maxWidth: 700, mx: "auto" }}>
       <Card sx={{ borderRadius: 4 }}>
         <CardContent>
           <Stack spacing={3}>

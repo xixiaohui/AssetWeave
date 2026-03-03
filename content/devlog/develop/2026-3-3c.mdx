@@ -1,0 +1,324 @@
+---
+title: 真实链上资产信息读取
+description: 资产上链后，如何读取链上资产的信息
+date: "2026-03-03"
+tags: [RWA, Web3, Next.js]
+cover: /images/rwa-cover.jpg
+---
+
+
+## 1.api接口设计
+当我们在前端页面上展示一个资产时，除了展示数据库里记录的资产信息外，我们还想展示一些链上信息，比如：
+- 资产的当前价格
+- 资产的拥有者
+- 资产的交易历史
+- 资产的状态（是否在售，是否被锁定等）
+
+为此，我们设计了一个新的API接口：
+
+```ts
+GET /api/assets/[id]/tx/[txHash]
+```
+这个接口会返回一个包含链上信息的对象：
+
+```json
+{
+  assetId,
+  actionType,
+  txHash,
+  blockHash,
+  status,
+  blockNumber,
+  gasUsed,
+  from,
+  to,
+  timestamp,
+  logs
+}
+```
+### api 代码，这一步是实时链上查询，未来要这个存到本地服务器
+
+```ts
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { NextRequest, NextResponse } from "next/server";
+import { createPublicClient, http } from "viem";
+import { sepolia } from "viem/chains";
+
+const client = createPublicClient({
+  chain: sepolia,
+  transport: http(process.env.RPC_URL!),
+});
+
+const safeSerialize = (obj: any): any => {
+  if (typeof obj === "bigint") return obj.toString();
+  if (Array.isArray(obj)) return obj.map(safeSerialize);
+  if (obj && typeof obj === "object") {
+    const res: any = {};
+    for (const k in obj) {
+      res[k] = safeSerialize(obj[k]);
+    }
+    return res;
+  }
+  return obj;
+};
+
+const serializeLog = (log: any) => {
+  return safeSerialize({
+    ...log,
+    blockNumber: Number(log.blockNumber),
+    transactionIndex: Number(log.transactionIndex),
+    logIndex: Number(log.logIndex),
+  });
+};
+
+export async function GET(
+  req: NextRequest,
+  {
+    params,
+  }: {
+    params: Promise<{ id: string; txHash: string }>;
+  },
+) {
+  try {
+    const { id, txHash } = await params;
+
+    console.log(id, txHash);
+
+    // 1️⃣ 获取交易
+    const tx = await client.getTransaction({
+      hash: txHash as `0x${string}`,
+    });
+
+    // 2️⃣ 获取交易回执
+    const receipt = await client.getTransactionReceipt({
+      hash: txHash as `0x${string}`,
+    });
+
+    // 3️⃣ 获取区块（拿时间戳）
+    const block = await client.getBlock({
+      blockHash: receipt.blockHash,
+    });
+
+    console.log("Fetched on-chain tx data:", { tx, receipt, block });
+
+    return NextResponse.json({
+      assetId: id,
+      actionType: "register", // 可根据日志解析动态判断
+      txHash: receipt.transactionHash,
+      blockHash: receipt.blockHash,
+      status: receipt.status === "success" ? 1 : 0,
+      blockNumber: Number(receipt.blockNumber),
+      gasUsed: receipt.gasUsed.toString(),
+      from: tx.from,
+      to: tx.to,
+      timestamp: Number(block.timestamp) * 1000,
+      logs: receipt.logs.map(serializeLog),
+    });
+  } catch (err) {
+    console.error(err);
+    return NextResponse.json(
+      { error: "Failed to fetch on-chain tx" },
+      { status: 500 },
+    );
+  }
+}
+
+
+```
+
+
+## 2.实时从链上查询的数据返回的内容是什么
+
+就是上面api接口里返回的内容，包括交易的基本信息、交易回执以及区块信息。通过这些数据，我们可以在前端页面上展示更丰富的链上资产信息，提升用户体验。
+
+```js
+console.log("Fetched on-chain tx data:", { tx, receipt, block });
+```
+
+```ts
+Fetched on-chain tx data: {
+  tx: {
+    accessList: [],
+    blockHash: '0x06618b012828a1d3072027414a304764f564565986c9fc6edec05c2fea8f51b8',
+    blockNumber: 10372968n,
+    chainId: 11155111,
+    from: '0xd12478358c37f5e86996eb917558b0ebfcc8a0e1',
+    gas: 143999n,
+    gasPrice: 1000009n,
+    hash: '0x7a18d907452a0ba77f5add924dbbc6c0a19a475f30f48ecdaf71d5f4d0da9067',
+    input: '0xc0b6501500000000000000000000000000000000000000000000000000000000000000090000000000000000000000000000000000000000000000000000000005f5e100000000000000000000000000000000000000000000000000000000e8d4a510000000000000000000000000000000000000000000000000000000048c2
+7395000000000000000000000000000000000000000000000000000000000006a46aa680000000000000000000000000000000000000000000000000000000001e13380',
+    maxFeePerGas: 1000018n,
+    maxPriorityFeePerGas: 1000000n,
+    nonce: 12,
+    r: '0x64fbe530d6c3fba39132552ea8c48a642b62650513ded5faca30c872e0a3b7df',
+    s: '0x7eb36f0a3a3d647dc08429ea1b77230b7dcf14083d7cdeea2f20b19a0f11e40',
+    to: '0xcede98d5b92dc354eb1d544be3481c516d18ea8e',
+    transactionIndex: 95,
+    type: 'eip1559',
+    v: 1n,
+    value: 0n,
+    yParity: 1,
+    typeHex: '0x2'
+  },
+  receipt: {
+    blockHash: '0x06618b012828a1d3072027414a304764f564565986c9fc6edec05c2fea8f51b8',
+    blockNumber: 10372968n,
+    contractAddress: null,
+    cumulativeGasUsed: 15377344n,
+    effectiveGasPrice: 1000009n,
+    from: '0xd12478358c37f5e86996eb917558b0ebfcc8a0e1',
+    gasUsed: 142849n,
+    logs: [ [Object] ],
+    logsBloom: '0x00000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000000001000000000000000000000000000001002000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000800000',
+    status: 'success',
+    to: '0xcede98d5b92dc354eb1d544be3481c516d18ea8e',
+    transactionHash: '0x7a18d907452a0ba77f5add924dbbc6c0a19a475f30f48ecdaf71d5f4d0da9067',
+    transactionIndex: 95,
+    type: 'eip1559'
+  },
+  block: {
+    baseFeePerGas: 9n,
+    blobGasUsed: 393216n,
+    difficulty: 0n,
+    excessBlobGas: 917504n,
+    extraData: '0x',
+    gasLimit: 60000000n,
+    gasUsed: 17211127n,
+    hash: '0x06618b012828a1d3072027414a304764f564565986c9fc6edec05c2fea8f51b8',
+    logsBloom: '0x04a140284040c94c009b190ea69280c28432203029d88d0308802d0c46220447060180428f437047e999748f34ae418041a902105ab2289b343738001ca4d04c1e4e304046e4b94a48a484ba0c5a8ea604090d440a9600465b150008880c44198f3b1204b3980340d809191828508c74c28a99c50b2d62648c01f070b0286
+7440ec201784a9fc4c03a0c4048a3312828a0ad5077fc1f008a448541cb457014b002a870720540523f03c4212118a51e262bc3008436610a0280e90fa2141cc1270000830b865645c508020e01cc630940589f7400cc8ad4502010104d59c66104013009d182a002618c583d40206584dd021203029ea047f054a42a1482c4ea91',
+    miner: '0xe276bc378a527a8792b353cdca5b5e53263dfb9e',
+    mixHash: '0x06dfafb8a19becdc6c9114eef0efc50aafa10cb3169c9d067b24e6c0fc106857',
+    nonce: '0x0000000000000000',
+    number: 10372968n,
+    parentBeaconBlockRoot: '0xeb447144ea257095242113486c4a8036fbf721b0d34f4249c754fc956570afd5',
+    parentHash: '0xf123f1aed3e97184cae766510eaaea3a2930c8a8533f42f44ffb401853e9ab6c',
+    receiptsRoot: '0x51f9426cf53a70892588854f058365f4b6efb7538889f87f55536ebcd947cabe',
+    requestsHash: '0xe3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+    sha3Uncles: '0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347',
+    size: 80099n,
+    stateRoot: '0x42c5d92ce560577ea1978bdfb5a58e8213ec87207a58f2a455c79c667fe7741a',
+    timestamp: 1772509308n,
+    transactions: [
+      '0x2211fcc77ae04f27aa15694cc58c49cb8a485d8e7ed1cf04c4e5ef498376e655',
+      '0x2c71e816591c3ab904573ce2efa53f1bfb1f06d4412afe3cc53b577ea35acd87',
+      '0x0eb1335219f740727e4bf498836d2a4a3457db32210c9dd32b29aa0af2e1d599',
+      '0x346b66ea6b460b539cff019866acc49c90f9c15f3dc4e6d67680a9bade7920b1',
+      '0x7c762d58a4e933024a020ece4400306d75a5e44c279cae6b483739b84d613075',
+      '0x2cd0a3da4613b9296f3ca0c0ae96e601074a3076353738dcad0de3622f6e1c3c',
+      '0xd136ebc97fcbfb23c03c3b672bb7bfb360e7c219abc396bfc0c73d7d703b2868',
+      '0x3442516b23a65535812a46cd51262f2b6a44adadb3be399d9f5ec2f16d82ece3',
+      '0x5cabfbd46eba1610faa5ed6bcbad8f513e77569cc0fbac7fc1d908e2aa13fa1f',
+      '0x443aa8173235948c8cf1339a413c55a73c8bc24932300253034b8a2dd3b62a70',
+      '0x4952aabf6655f60192bb4d1f005f4039d7fd40c9766261ea4e5ac926315f401b',
+      '0xd7d978b7d319a2f545946c7cc7e3a9859d808450c8cf61793551d53bc83be657',
+      '0x649719350babff5aeb378058e47110c6e585681e3a36650717e43fdded00d93d',
+      '0x94e2eeddee092c526011077b5c7135d1d68f43dd7a7cf794bde827e2db0cb3e2',
+      '0xbef702459b242e44edc146ce4a030f98551271a08f1d6f0ddc37e64b3cc5d73a',
+      '0x6b0ede0095f090b976a6ce7e3b7c3307b80ed501ccc518d8b899abc501a5f3f5',
+      '0xb6ca40df857285c868ed678ae7de5399f3b1efe81d112639d60f4a32bf2e0db4',
+      '0xb91397f753cefe769dc00f998956c54a955b6fa7810579883db2993d8ddfcbc3',
+      '0x59c42bf237b16ad2a2b88aa0ce1077ecd18516aea64ada4f5450e883628a11ef',
+      '0xf1d7d62087042366d9576c337016b3b1aa072dbb722d856fa60358a0532439a1',
+      '0x88b68b8ef8161a8731204d530752496b41256cccc7fce913e5c38f07e7059a60',
+      '0x6daefc8a4a4208812fc31fbe994b4eb782af5ff859750532490e4a453d9f128c',
+      '0xdf57b2985db4def87d3148fcb699fbc4974b4b5a786e4e19081f0dc95a90695a',
+      '0x9d05f6bc5d2b3bd21b5b7b2c3efffa5205928c7b6c011f608d0b1dfccf6828f4',
+      '0xd8ff5a2a73103459bb22d5063f42698f15f5f46fa8edf0cfbfc39ccae18e89f0',
+      '0x577541371d7bc9d23cb229536a22b3cbc56ff0cd314d67f208947499a7e4b7f1',
+      '0xc1e70e6db35c644a40de93d5b3871ebf8ccd28a0dad377334408de129ffb2cc3',
+      '0x6b87dbd1a8bc24152164484e6f7c1287deca257953566ed1967b74467b628063',
+      '0xaffc1be95ff3d16ba545248be0f6241cd03f8705792a81e8ca0378de0fd1c8bf',
+      '0xa173e6c0edab09f1e2576fccbd1868b0872254f442ad2d778c258bf148ba320e',
+      '0x8f9c3e68bfdd850ae411cf9d1e21b8ce7356b03420f457ac30907a8acc11f645',
+      '0x748ce27a25bbe5751312706d5a8486cec8166fbae712de13ff9c5506454993e0',
+      '0xf0214abb185c73764c5c41aab004047fb274ab6aa360d0e70944927830227596',
+      '0x45caed6aeef4f235088e16f2588d09a9799f3186fe5e3081e9871e2b6ddcdf26',
+      '0x9ed565b1db19aa354d3844603949e4e763ddad45dfbc195b001566c0bf7f3a3c',
+      '0x1e0e66aaa4d6a73bcace6853009d318b8fa209314cf874c1627b52ede2094f3a',
+      '0xd97c0e97aa329db6e4c80ee649ab863e434bed15648ec329a1f91cf37d9f04e6',
+      '0xff199cf49c30bb3580f38815bc87085d055a4fcac4a99ef4286bacdf9528834e',
+      '0x32e451213cc542dfa45333a33dd3f903746a9fdf6ff9cc47a7ca6989421258f1',
+      '0xb3252c84aa1ad3ab7e674f6f3d46ae22e445047d8e3dd0755756cb74a51aea63',
+      '0xdea3b0e9f30a8fbb4fb82dc1494a37d9aac6cbe9498fb0f787bb851f4eaeced2',
+      '0x1b3173bee343bc90a6b67e3438a9096224c9aaf14753ce761529e8ba33143669',
+      '0x4806edd4262798d4dc687fd5a518ce7d004fce0c1dde979e7b6cf6848eeebe17',
+      '0x3775e23c9cf80ed41646058c3b9b6d998bc561d8d8a20f10951641bc81131d58',
+      '0x02bdd42b9f1ee9bbaccfd44c11477a02c0a91f0361b1b986c1431d209bb9162e',
+      '0xe1131767014d39a34498a311683550c31f1610a714aabcdcb310b649ff04eeeb',
+      '0x7b25362e32c96fbbbbebe8d021b04ab34c64aae9bee1d43a7eec1ae882e97e26',
+      '0xae0896da7a859a01f6d339959f8acb28b3c0117773755158da0dede891e419e9',
+      '0x8da751480e2e921776e9846579d6970b89d119f5378deba5429fa5eba5ea1eb9',
+      '0x809dfa0c18d8d5f4545180a38cfd73f56e126a9ac12a95c9d417cac4dccf517f',
+      '0x6174defdd21d4269cc2a9e514145e635947e0b4f4d48a2cfdf2fdc6bcd253b28',
+      '0x1e39dc76258e58687f096358bc26fb5924670f389853a11d20abe2979b6fa226',
+      '0xbb44be224c19aa1e581625010d3428c31463155b1b84f1fd176e0acfd53fda87',
+      '0x4cc54a9f749d431d6d598f8385d526f2c4eec47148720baa55a0bbb4eb4d83fc',
+      '0x6c52b46b5bd6f16ea8f8996c6330d4e6a7b0b843a7710b0b9731cbc0b163fcd0',
+      '0x9fb06be9ec9dc51c9f34b1d76ed52d9ad506fe0cb30d5edeeabf46d8f7941cdd',
+      '0x81058cd27a1775978c5627a032bd9ddc3c9317858482749a2c28789ae483a717',
+      '0xc568dcf3e447e6111252cadb79b98cdf69619916b60d745c3e934357883dd669',
+      '0xf8cb5c5dc531c79a75e504b550e52a1963a4871f24e68ea5226f7dae92d3f864',
+      '0x19f788e5b64d2d9f5353a207710408cd1cba4dc099db77ef3ecbe06da305909f',
+      '0xf70765012d91be4c87e85aba72ea17000f73028f958b21d30ae52d6e723fb019',
+      '0x7557abf02811200b85e00708c5cac8f091cb9cc5c044713960cbea7cca35a288',
+      '0x5db8c48678170180fa2541252cf963b723c7fc9ff7bf473126d6894ef8207349',
+      '0xf340c8651413979ff75741b92096d70573737d3246355bf421198ce807e5ef35',
+      '0x9ff4bff0afd29a1987b1eb2b6d4d520cf4f809e13baa13d40bc2be15befb0998',
+      '0xb8eabcbbcb1771f6f18b5203faaccc310748e2c6ec45f230f0af42cb629fc388',
+      '0xb5f54e96eded7c2ee3b61e703996f50f52b11d061d4cbd57848bdaa1374f8a68',
+      '0xebfd8177d39b670b77170932373cc0135cb57431edb0dca4a747091f442d6453',
+      '0xbc9772f37855fbe6cde98dc275d66880fe63f3b6ab688aa14b37a48129b98674',
+      '0xa4f3af871608b53c40dd3e03409c495fd5084ba5c80220f4c3b21acc73687ec9',
+      '0x8f288143d37d2dc72e5567d844ed9cb82e92ebf9a40f15959d08d06dc8228528',
+      '0x5f9415b831ba8ef9d5780cdf9f7cc8519b58826633ebf66053e0662414919170',
+      '0x0b6bb178a6493d5b5a597c342d8b2cdf1a787bd79d7f3c01d8ed0508f763a045',
+      '0xd1adfdd27c153759a46b442651aa3057bbee5383efa63d2f6a37cf948c69d7c0',
+      '0xf54621e10fa18a7fa2d4daffb8ead2fdf9002ee5f29c2db27503771b0eed1188',
+      '0x52d136d2b088883aa0fd08b2256b98468cb39c9b4e359ebb138261941f98bab6',
+      '0x47d36b1d483318141d7765968d9c676036c5948796e3a06ec7080683031750a6',
+      '0xaa31ef6f442b00b4221cc4263aa109ce22e27f058d8d960a5f20d2da269253cf',
+      '0xcc7296a5777a4a0b9b19c243221b5aaacac804a33efa7239efd7c6acdb44c3e9',
+      '0xe1d13eebe4cecb7364407371283b2862dfa21a719f50073e6b205979afdbd55c',
+      '0x4699ca8a662a58d92832ec8740e3a4e34db8d331a16d1e922de8ad5df7d706db',
+      '0xc5cb416d61fb3e0ecd4218f93cefb119496bf21a60f055a06d784b518ad21da5',
+      '0x2172cc3f110ce59e0348fdfa658b56ce8560acd0ca1dbe12508c1a145d00d058',
+      '0x064535f9922d4aab826f2a8c3f445f6210b5b10ef8612f09be6c5b22e211cd7a',
+      '0x0b08957a17883699cfbdead0062425aaf2c5a47ffeed59d485b23ba7020cde9d',
+      '0x24a17d46aa673660675b8341c03d5993d25e205cb5f6ed68468d1e1bc102225b',
+      '0x0f707dee6bc2e15b91ad4e1b12a963f074c7fd8e6333b702baae24cb2bad631d',
+      '0xcd1ebd50df4e6e7b81ee5f4b56b5c497f2bf82c08e5ba07ba0017789f6de762e',
+      '0xf2f118d16e234b0ff6e618eefcabdf942ea452db45357560326aa9b85606e259',
+      '0x2e835b3f7cb7da1205234f8dffb17c5e4bc815550b228e60c445784680df9b3b',
+      '0xbc48b39a9c542591b905542c4edebea2d1854f69835ec519455add9a23c8b94a',
+      '0x25ca5217a6d4104c45290c32400dd6a316de56ad1fd4a62724af34a1bad7f406',
+      '0x225498176417fea831d6204395b220f637128637f1b0c8bc154d7ce4117d3e27',
+      '0xd199693e8d7d017074af2330d32e55ee53972e4a9f8f3f2efd4bea33e27f605d',
+      '0xed36347b81fff11cef47cb36ea3fa5c33030b36ab45bb0c992766a44d6a17036',
+      '0x7a18d907452a0ba77f5add924dbbc6c0a19a475f30f48ecdaf71d5f4d0da9067',
+      '0x4336769a9c954167ab4ef990f07a38b13bb5a671063ae5d22eb76d3e5997c80b',
+      '0xd4f38b3cd7d468cf65d4c4dfd4d3937d8047651f709fa2be367faddc663818ec',
+      '0xc8b0fd0ea69c61de1b7dfe889b03a7a79437c443e1f58653279e5e88a7359080',
+      '0x19bda10ccaa8ab3f41f570a6084cfa7bfedcd42b47e974709e57eb81d9f51413',
+      ... 7 more items
+    ],
+    transactionsRoot: '0x99136e7e09839a098dfd1875519290f90fd3953cd2766da0aaac0269e13c8b21',
+    uncles: [],
+    withdrawals: [
+      [Object], [Object],
+      [Object], [Object],
+      [Object], [Object],
+      [Object], [Object],
+      [Object], [Object],
+      [Object], [Object],
+      [Object], [Object],
+      [Object], [Object]
+    ],
+    withdrawalsRoot: '0xc90894ea58cd1ebb946df8db6fa17a21eefa26cbf494f4bdd26630de1e9b93d1',
+    totalDifficulty: null
+  }
+}
+```

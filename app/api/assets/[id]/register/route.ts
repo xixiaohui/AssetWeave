@@ -63,7 +63,7 @@ export async function POST(
       WHERE id = $4
     `,
       [
-        receipt.transactionHash,
+        receipt.hash,
         receipt.blockNumber,
         receipt.gasUsed.toString(),
         id,
@@ -74,8 +74,15 @@ export async function POST(
 
     return NextResponse.json({
       success: true,
-      txHash: receipt.transactionHash,
+      txHash: receipt.hash,
+      status: receipt.status,
       blockNumber:receipt.blockNumber,
+      blockHash: receipt.blockHash,
+      gasUsed: receipt.gasUsed.toString(),
+      gasPrice: receipt.gasPrice.toString(),
+      from: receipt.from,
+      to: receipt.to,
+      logs: receipt.logs,
     });
   } catch (error) {
     await client.query("ROLLBACK");

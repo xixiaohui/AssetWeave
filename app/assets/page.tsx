@@ -35,9 +35,12 @@ export interface Asset {
   end_time?: string; // 募资结束时间
 
   token_symbol?: string;
+  token_id?: string;
 
   status: string;
   created_at: string;
+
+  register_tx_hash?: string; // 上链交易哈希
 }
 
 export function AssetsHeader() {
@@ -90,7 +93,7 @@ export default function AssetsPage() {
       </Button>
       <Grid container spacing={3} sx={{ mt: 10 }}>
         {assets.map((a) => (
-          <Grid key={a.id} size={{ xs: 12, md: 6, lg: 4 }}>
+          <Grid key={a.id} size={{ xs: 12, md: 6, lg: 3 }}>
             <Link href={`/assets/${a.id}`} style={{ textDecoration: "none" }}>
               <Card
                 sx={{

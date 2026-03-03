@@ -20,8 +20,8 @@ export async function GET(req: Request) {
   // 默认查询 draft + approved
   const statuses =
     statusParam === "draft"
-      // ? ["draft", "approved","pending_review","raising","sold_out","expired","repaying","finished",""]
-      ? ["draft", "approved","pending_review","sold_out","expired","repaying","finished",""]
+      ? ["draft", "approved","pending_review","raising","sold_out","expired","repaying","finished",""]
+      // ? ["draft", "approved","pending_review","sold_out","expired","repaying","finished",""]
       : statusParam
       ? [statusParam]
       : ["draft", "approved"];
