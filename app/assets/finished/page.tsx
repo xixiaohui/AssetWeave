@@ -24,11 +24,11 @@ const STATUS_OPTIONS = [
   { value: "pending_review", label: "待审核" },
   { value: "approved", label: "审核通过" },
   { value: "rejected", label: "审核不通过" },
-  // { value: "raising", label: "募集中" },
-  // { value: "sold_out", label: "已售罄" },
-  // { value: "expired", label: "已到期" },
-  // { value: "repaying", label: "回款中" },
-  // { value: "finished", label: "已完成" },
+  { value: "raising", label: "募集中" },
+  { value: "sold_out", label: "已售罄" },
+  { value: "expired", label: "已到期" },
+  { value: "repaying", label: "回款中" },
+  { value: "finished", label: "已完成" },
 ];
 
 export default function AssetReviewPage() {
@@ -74,7 +74,7 @@ export default function AssetReviewPage() {
     const fetchAssets = async () => {
       try {
         setLoading(true);
-        const res = await fetch("/api/assets/review/?status=draft"); // 获取 draft 状态资产
+        const res = await fetch("/api/assets/review/?status=finished"); // 获取 draft 状态资产
         if (!res.ok) throw new Error("获取资产列表失败");
         const data: Asset[] = await res.json();
         setAssets(data);
@@ -154,12 +154,12 @@ export default function AssetReviewPage() {
     );
 
   if (!assets.length)
-    return <Box sx={{ mt: 10, textAlign: "center" }}>暂无待审核资产</Box>;
+    return <Box sx={{ mt: 10, textAlign: "center" }}>暂无募资完成资产</Box>;
 
   return (
     <Box sx={{ p: 6, mt: 10, maxWidth: 700, mx: "auto" }}>
       <Typography variant="h4" fontWeight={700} mb={4} align="center">
-        待审核资产列表
+        募资完成资产列表
       </Typography>
 
       <Stack spacing={3}>

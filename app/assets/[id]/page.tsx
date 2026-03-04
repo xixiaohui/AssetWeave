@@ -4,7 +4,7 @@ import { Asset } from "../page";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import AssetDetailPage from "./AssetDetailPage";
-import { Box, CircularProgress } from "@mui/material";
+import { Box, CircularProgress, Typography } from "@mui/material";
 import AssetBuyPage from "./AssetBuyPage";
 import { TxReceiptCard } from "@/components/TxReceiptCard";
 
@@ -118,10 +118,18 @@ export default function PageClient() {
   return (
     <Box sx={{ p: 6, mt: 10, maxWidth: 700, mx: "auto" }}>
       <AssetDetailPage asset={asset} />
-
-      <TxReceiptCard txResult={txResult} chainName="Sepolia" hideLogs={false} />
-
-      <AssetBuyPage asset={asset} />
+      {!asset.register_tx_hash ? (
+        <Box sx={{ mt: 4, textAlign: "center", color: "gray" }}>
+          <Typography variant="h6" gutterBottom>该资产尚未上链注册</Typography>
+        </Box>
+      ) : (
+        <TxReceiptCard
+          txResult={txResult}
+          chainName="Sepolia"
+          hideLogs={false}
+        />
+      )}
+      {asset.status === "raising" && <AssetBuyPage asset={asset} />}
     </Box>
   );
 }

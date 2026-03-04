@@ -87,20 +87,41 @@ export default function AssetsPage() {
   }, []);
 
   return (
-    <Box sx={{ mt: 10 }}>
-      <Button component={Link} href="/assets/review" variant="outlined">
-        待审核资产
-      </Button>
-      <Grid container spacing={3} sx={{ mt: 10 }}>
+    <Box sx={{ my: 10 }}>
+      <Box sx={{ my: 6, maxWidth: 1200, mx: "auto" }}>
+        <Stack direction="row" spacing={2}>
+          <Button component={Link} href="/assets" variant="outlined">
+            全部资产
+          </Button>
+          <Button component={Link} href="/assets/review" variant="outlined">
+            待审核
+          </Button>
+          <Button component={Link} href="/assets/raising" variant="outlined">
+            融资中
+          </Button>
+          <Button component={Link} href="/assets/finished" variant="outlined">
+            已结束
+          </Button>
+        </Stack>
+      </Box>
+
+      <Grid
+        container
+        spacing={3}
+        sx={{ my: 10, maxWidth: 1200, margin: "0 auto" }}
+      >
         {assets.map((a) => (
-          <Grid key={a.id} size={{ xs: 12, md: 6, lg: 3 }}>
+          <Grid key={a.id} size={{ xs: 12, md: 6, lg: 4 }}>
             <Link href={`/assets/${a.id}`} style={{ textDecoration: "none" }}>
               <Card
                 sx={{
                   height: "100%",
                   borderRadius: 4,
                   transition: "0.2s",
-                  backgroundColor: "#def8b3",
+                  border:
+                    a.status !== "raising"
+                      ? "1px solid orange"
+                      : "1px solid transparent",
                   "&:hover": { boxShadow: 6, transform: "translateY(-4px)" },
                 }}
               >
@@ -170,8 +191,12 @@ export default function AssetsPage() {
                       justifyContent="space-between"
                       sx={{ width: "100%" }}
                     >
-                      <Typography color="text.secondary">募资截止时间</Typography>
-                      <Typography>{new Date(a.start_time!).toLocaleDateString()}</Typography>
+                      <Typography color="text.secondary">
+                        募资截止时间
+                      </Typography>
+                      <Typography>
+                        {new Date(a.start_time!).toLocaleDateString()}
+                      </Typography>
                     </Stack>
 
                     {/* 代币符号 */}
