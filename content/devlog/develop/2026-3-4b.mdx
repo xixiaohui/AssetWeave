@@ -1,3 +1,15 @@
+---
+title: XUSDT测试币数量查询
+description: XUSDT是我们平台的测试用稳定币，注册用户可以通过faucet获取一定数量的XUSDT用于测试投资流程。
+date: "2026-03-04"
+tags: [RWA, Web3, Next.js]
+cover: /images/rwa-cover.jpg
+---
+
+## 1. 查询用户XUSDT余额
+
+用户可以通过调用我们的API接口来查询自己钱包中的XUSDT余额。接口实现如下：
+```typescript
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from "next/server";
 import { getXUSDT } from "@/lib/xusdtContract";
@@ -43,3 +55,4 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: err.message || "Failed to get balance" }, { status: 500 });
   }
 }
+```

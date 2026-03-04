@@ -6,4 +6,210 @@ tags: [RWA, Web3, Next.js]
 cover: /images/rwa-cover.jpg
 ---
 
-## 1.平台给注册用户faucet测试币
+## 1.平台给注册用户faucet测试币,测试币名称为XUSDT，合约内容是什么样子的？
+
+```solidity
+
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
+import "@openzeppelin/contracts/utils/Pausable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+
+contract XUSDT is ERC20Permit, ERC20Burnable, Pausable, Ownable {
+    uint8 private constant _DECIMALS = 6;
+
+    mapping(address => bool) public blacklisted;
+
+    constructor()
+        ERC20("XUSDT Test Stablecoin", "XUSDT")
+        ERC20Permit("XUSDT Test Stablecoin")
+        Ownable(msg.sender)
+    {
+        _mint(msg.sender, 1_000_000 * 10 ** _DECIMALS);
+    }
+
+    function decimals() public pure override returns (uint8) {
+        return _DECIMALS;
+    }
+
+    // 黑名单（USDT 核心）
+    function setBlacklist(address user, bool status) external onlyOwner {
+        blacklisted[user] = status;
+    }
+
+    modifier notBlacklisted(address user) {
+        require(!blacklisted[user], "Blacklisted");
+        _;
+    }
+
+    // USDT 坑：approve 必须先归零
+    function approve(address spender, uint256 amount)
+        public
+        override
+        notBlacklisted(msg.sender)
+        notBlacklisted(spender)
+        returns (bool)
+    {
+        require(
+            amount == 0 || allowance(msg.sender, spender) == 0,
+            "Reset allowance to 0 first"
+        );
+        return super.approve(spender, amount);
+    }
+
+    function mint(address to, uint256 amount) external onlyOwner {
+        _mint(to, amount);
+    }
+
+    function faucetMint() external {
+        _mint(msg.sender, 10_000 * 10 ** _DECIMALS);
+    }
+
+    function forceBurn(address user, uint256 amount) external onlyOwner {
+        _burn(user, amount);
+    }
+
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    function unpause() external onlyOwner {
+        _unpause();
+    }
+
+    function _update(address from, address to, uint256 value)
+        internal
+        override
+        whenNotPaused
+    {
+        require(!blacklisted[from] && !blacklisted[to], "Blacklisted");
+        super._update(from, to, value);
+    }
+}
+```
+
+## 2.注册用户都有钱包地址，平台通过调用合约的mint方法给用户发放测试币
+
+### 搭配一个用户的领取测试币的方式的接口，用户调用这个接口就可以领取测试币了，接口的实现如下：
+
+```js
+/api/xusdt/mintsafe/route.ts
+```
+```typescript
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import pool from "@/lib/db";
+import { getXUSDT } from "@/lib/xusdtContract";
+import { ethers } from "ethers";
+import { NextRequest } from "next/server";
+
+export async function POST(req: NextRequest) {
+  try {
+    const { to } = await req.json();
+
+    if (!to) {
+      return Response.json({ error: "Missing 'to'" }, { status: 400 });
+    }
+
+    if (!ethers.isAddress(to)) {
+      return Response.json({ error: "Invalid address" }, { status: 400 });
+    }
+
+    const amount = "100";
+
+    // 获取 IP
+    const ip =
+      req.headers.get("x-forwarded-for") ||
+      req.headers.get("x-real-ip") ||
+      "unknown";
+
+    // 🔒 尝试插入记录（利用唯一索引防止重复领取）
+    try {
+      await pool.query(
+        `
+        INSERT INTO faucet_logs (wallet, amount, ip_address, claim_date)
+        VALUES ($1, $2, $3, CURRENT_DATE)
+        `,
+        [to, amount, ip]
+      );
+    } catch (dbErr: any) {
+      if (dbErr.code === "23505") {
+        // 已经领取过今天
+        return Response.json({ error: "Already claimed today" }, { status: 400 });
+      }
+      throw dbErr;
+    }
+
+    // 发币
+    const xusdt = getXUSDT();
+    const decimals = await xusdt.decimals();
+    const amountInWei = ethers.parseUnits(amount, decimals);
+
+    const tx = await xusdt.mint(to, amountInWei);
+    await tx.wait();
+
+    // 更新 tx_hash
+    await pool.query(
+      `
+      UPDATE faucet_logs
+      SET tx_hash = $1
+      WHERE wallet = $2 AND claim_date = CURRENT_DATE
+      `,
+      [tx.hash, to]
+    );
+
+    return Response.json({
+      success: true,
+      tx: tx.hash,
+      amount,
+      to,
+    });
+  } catch (err: any) {
+    console.error("Mint error:", err);
+    return Response.json({ error: err.message || "Mint failed" }, { status: 500 });
+  }
+}
+
+// GET 方法可查询今天是否已领取
+export async function GET(req: NextRequest) {
+  const url = new URL(req.url);
+  const wallet = url.searchParams.get("wallet");
+
+  if (!wallet) return Response.json({ claimed: false });
+
+  const { rows } = await pool.query(
+    "SELECT * FROM faucet_logs WHERE wallet = $1 AND claim_date = CURRENT_DATE",
+    [wallet]
+  );
+
+  return Response.json({ claimed: rows.length > 0 });
+}
+```
+
+### 新建一个数据库表faucet_logs来记录领取测试币的日志，防止用户重复领取：
+
+```sql
+CREATE TABLE faucet_logs (
+  id BIGSERIAL PRIMARY KEY,
+  wallet VARCHAR(42) NOT NULL,
+  amount NUMERIC(30, 6) NOT NULL,
+  tx_hash VARCHAR(66),
+  ip_address VARCHAR(45),
+
+  claim_date DATE NOT NULL DEFAULT CURRENT_DATE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX idx_faucet_wallet ON faucet_logs(wallet);
+CREATE INDEX idx_faucet_created_at ON faucet_logs(created_at DESC);
+
+-- 每个钱包每天只能领一次
+CREATE UNIQUE INDEX unique_wallet_per_day
+ON faucet_logs (wallet, claim_date);
+
+-- 再加 IP 限制：
+CREATE UNIQUE INDEX unique_ip_per_day
+ON faucet_logs (ip_address, claim_date);
+```

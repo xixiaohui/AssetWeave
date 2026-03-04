@@ -1,15 +1,14 @@
-
 import pool from "@/lib/db";
 import { NextResponse } from "next/server";
-
-
-
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const status = url.searchParams.get("status") || "draft";
 
-  const { rows } = await pool.query("SELECT * FROM assets WHERE status = $1", [status]);
+  const { rows } = await pool.query(
+    "SELECT * FROM assets WHERE status = $1 ORDER BY created_at DESC",
+    [status],
+  );
   return NextResponse.json(rows);
 }
 

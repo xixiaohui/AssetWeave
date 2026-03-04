@@ -100,7 +100,7 @@ export default function AssetsPage() {
             融资中
           </Button>
           <Button component={Link} href="/assets/finished" variant="outlined">
-            已结束
+            已完成
           </Button>
         </Stack>
       </Box>
@@ -119,7 +119,7 @@ export default function AssetsPage() {
                   borderRadius: 4,
                   transition: "0.2s",
                   border:
-                    a.status !== "raising"
+                    a.status === "draft" || a.status === "pending_review"
                       ? "1px solid orange"
                       : "1px solid transparent",
                   "&:hover": { boxShadow: 6, transform: "translateY(-4px)" },
