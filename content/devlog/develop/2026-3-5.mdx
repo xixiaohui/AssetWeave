@@ -1,0 +1,566 @@
+---
+title: 认购资产
+description: 
+date: "2026-03-05"
+tags: [RWA, Web3, Next.js]
+cover: /images/rwa-cover.jpg
+---
+
+## 1. 用户有了XUSDT，如何认购资产
+
+用户从测试币系统拿到 XUSDT
+
+用户通过前端点击认购
+
+后端调用合约 subscribe(id, usdtAmount)
+
+完成 XUSDT 转入 + ERC1155 mint
+
+```solidity
+
+    // ===== 认购 =====
+    function subscribe(uint256 id, uint256 usdtAmount) external nonReentrant {
+        Asset storage a = assets[id];
+        require(block.timestamp < a.deadline, "RWA: ended");
+        require(whitelisted[msg.sender], "RWA: no KYC");
+        require(a.totalRaised + usdtAmount <= a.maxRaise, "RWA: over raise");
+        require(usdtAmount % a.price == 0, "RWA: invalid amount");
+
+        // 计算 token 数量
+        uint256 amount = usdtAmount / a.price;
+
+        // 转 USDT 到合约
+        usdt.safeTransferFrom(msg.sender, address(this), usdtAmount);
+
+        // 更新募集记录
+        a.totalRaised += usdtAmount;
+        investedAmount[id][msg.sender] += usdtAmount;
+
+        // Mint ERC1155
+        _mint(msg.sender, id, amount, "");
+
+        emit Subscribed(msg.sender, id, usdtAmount);
+    }
+```
+
+## 2.后端API这样设计
+
+```ts
+app/api/rwa/subscribe/route.ts
+```
+
+```ts
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { getRWAPlatformContract } from "@/lib/rwaPlatformContract";
+import { NextRequest, NextResponse } from "next/server";
+import { ethers } from "ethers";
+import pool from "@/lib/db";
+
+export async function POST(req: NextRequest) {
+  try {
+    const { id, usdtAmount } = await req.json();
+
+    if (!id || !usdtAmount) {
+      return NextResponse.json({ error: "Missing params" }, { status: 400 });
+    }
+
+    const contract = getRWAPlatformContract();
+
+    const amount = ethers.parseUnits(usdtAmount.toString(), 6);
+
+    const tx = await contract.subscribe(id, amount);
+    const receipt = await tx.wait();
+
+    
+    // 从链上读真实 totalRaised
+    const asset = await contract.assets(id);
+
+    // asset.totalRaised 是 6 decimals
+    const totalRaisedHuman = Number(ethers.formatUnits(asset.totalRaised, 6));
+
+    // 所以这里必须用原始 usdtAmount (人类单位)
+    await pool.query(
+      `
+    UPDATE assets
+    SET total_raised = $1,
+        updated_at = now()
+    WHERE token_id = $2
+    `,
+      [totalRaisedHuman, id],
+    );
+
+    return NextResponse.json({
+      success: true,
+      txHash: tx.hash,
+      blockNumber: receipt?.blockNumber,
+    });
+  } catch (e: any) {
+    return NextResponse.json({ error: e.message }, { status: 500 });
+  }
+}
+
+```
+
+## 3.subscribe(2, 100000000)发生了什么
+
+XUSDT = 6 decimals
+
+100000000 = 100 USDT
+
+id = 2 代表某个 RWA 项目
+
+- 第一步：进入函数
+id = 2
+usdtAmount = 100000000
+msg.sender = 用户钱包地址
+
+
+- 第二步：读取资产
+Asset storage a = assets[id];
+
+a = assets[2];
+假设资产2配置为：
+price = 1000000        // 1 USDT 一个 token
+maxRaise = 1000000000  // 1000 USDT
+totalRaised = 200000000 // 已募 200 USDT
+deadline = 明天
+
+- 第三步：执行 require 校验
+① 是否在募集期
+require(block.timestamp < a.deadline)
+② 是否 KYC
+require(whitelisted[msg.sender])
+③ 是否超募
+```ts
+require(a.totalRaised + usdtAmount <= a.maxRaise)
+```
+④ 金额是否符合单价整数倍
+require(usdtAmount % a.price == 0)
+这一步防止出现 1.5 个 token 这种情况。
+
+- 第四步：计算 mint 数量
+uint256 amount = usdtAmount / a.price;
+100000000 / 1000000 = 100
+用户将获得 100 个 ERC1155 token（id=2）
+
+- 第五步：转 XUSDT 到合约
+usdt.safeTransferFrom(msg.sender, address(this), usdtAmount);
+
+从 用户钱包
+转 100 XUSDT
+到 RWA 合约地址
+
+- 第六步：更新募集记录
+a.totalRaised += usdtAmount;
+investedAmount[id][msg.sender] += usdtAmount;
+
+- 第七步：Mint ERC1155
+_mint(msg.sender, id, amount, "");
+
+给 用户地址
+mint
+id = 2
+数量 = 100
+
+用户现在钱包里：
+
+ERC1155 Token:
+  id=2 → 100
+
+
+- 第八步：发出事件
+emit Subscribed(msg.sender, id, usdtAmount);
+Subscribed(
+  用户地址,
+  2,
+  100000000
+)
+
+contract.on("Subscribed", ...)
+
+> 最终结果总结
+
+1️⃣ 检查募集是否有效
+2️⃣ 检查 KYC
+3️⃣ 检查是否超募
+4️⃣ 计算应得 token 数量
+5️⃣ 转 100 USDT 到合约
+6️⃣ 更新募集金额
+7️⃣ mint 100 个 id=2 的 ERC1155
+8️⃣ 记录链上事件
+
+
+## 4.认购资产以后，同步数据库assets表字段
+
+```sql
+
+                                                 Table "public.assets"
+        Column         |            Type             | Collation | Nullable |                 Default
+-----------------------+-----------------------------+-----------+----------+------------------------------------------
+ id                    | uuid                        |           | not null | gen_random_uuid()
+ issuer_id             | uuid                        |           |          |
+ name                  | text                        |           | not null |
+ description           | text                        |           |          |
+ category              | text                        |           |          |
+ currency              | text                        |           |          | 'CNY'::text
+ status                | text                        |           |          | 'draft'::text
+ created_at            | timestamp with time zone    |           |          | now()
+ token_id              | integer                     |           | not null | nextval('assets_token_id_seq'::regclass)
+ cover_url             | text                        |           |          |
+ whitepaper_url        | text                        |           |          |
+ price                 | numeric(20,6)               |           |          |
+ min_raise             | numeric(20,2)               |           |          |
+ max_raise             | numeric(20,2)               |           |          |
+ total_raised          | numeric(20,2)               |           |          | 0
+ apy                   | numeric(5,2)                |           |          |
+ duration_days         | integer                     |           |          |
+ start_time            | timestamp without time zone |           |          |
+ end_time              | timestamp without time zone |           |          |
+ token_symbol          | text                        |           |          |
+ token_address         | text                        |           |          |
+ chain_id              | integer                     |           |          |
+ contract_tx_hash      | text                        |           |          |
+ deployed_at           | timestamp without time zone |           |          |
+ updated_at            | timestamp without time zone |           |          | now()
+ register_tx_hash      | text                        |           |          |
+ register_block_number | integer                     |           |          |
+ register_gas_used     | numeric                     |           |          |
+ register_confirmed_at | timestamp without time zone |           |          |
+Indexes:
+    "assets_pkey" PRIMARY KEY, btree (id)
+    "assets_token_id_key" UNIQUE CONSTRAINT, btree (token_id)
+    "idx_assets_category" btree (category)
+    "idx_assets_created_at" btree (created_at DESC)
+    "idx_assets_issuer" btree (issuer_id)
+    "idx_assets_register_tx_hash" btree (register_tx_hash)
+    "idx_assets_status" btree (status)
+    "unique_token_address" UNIQUE CONSTRAINT, btree (token_address)
+Check constraints:
+    "assets_status_check" CHECK (status = ANY (ARRAY['draft'::text, 'pending_review'::text, 'approved'::text, 'raising'::text, 'sold_out'::text, 'expired'::text, 'repaying'::text, 'finished'::text, 'rejected'::text]))
+Foreign-key constraints:
+    "assets_issuer_id_fkey" FOREIGN KEY (issuer_id) REFERENCES users(id)
+Referenced by:
+    TABLE "asset_documents" CONSTRAINT "asset_documents_asset_id_fkey" FOREIGN KEY (asset_id) REFERENCES assets(id) ON DELETE CASCADE
+    TABLE "asset_valuations" CONSTRAINT "asset_valuations_asset_id_fkey" FOREIGN KEY (asset_id) REFERENCES assets(id) ON DELETE CASCADE
+    TABLE "tokens" CONSTRAINT "tokens_asset_id_fkey" FOREIGN KEY (asset_id) REFERENCES assets(id) ON DELETE CASCADE
+    TABLE "yield_records" CONSTRAINT "yield_records_asset_id_fkey" FOREIGN KEY (asset_id) REFERENCES assets(id)
+Triggers:
+    update_assets_updated_at BEFORE UPDATE ON assets FOR EACH ROW EXECUTE FUNCTION update_updated_at_column()
+
+```
+
+### total_raised
+### updated_at
+
+
+
+## 5.建议新增表
+
+investments 表（用户维度）
+可以查询
+- 某用户投了哪些项目
+- 投了多少
+- 哪笔交易
+
+```sql
+CREATE TABLE investments (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  asset_token_id integer NOT NULL,
+  investor_address text NOT NULL,
+  usdt_amount numeric(20,6) NOT NULL,
+  token_amount numeric(20,6) NOT NULL,
+  tx_hash text NOT NULL,
+  block_number integer,
+  created_at timestamptz DEFAULT now()
+);
+```
+
+## 6.认购成功后数据库操作
+
+> 1.插入投资记录
+```sql
+INSERT INTO investments (...)
+```
+> 2.更新项目募集金额
+```sql
+UPDATE assets
+SET total_raised = total_raised + 100
+WHERE token_id = 2;
+```
+
+### 但是正确的方式应该是:监听事件
+
+```sql
+event Subscribed(address investor, uint256 id, uint256 usdtAmount);
+```
+后端
+
+```ts
+contract.on("Subscribed", async (investor, id, amount, event) => {
+   // 写数据库
+});
+
+```
+这样数据库一定和链上真实一致。
+
+
+## 7. subscribe认购后同步数据库的操作，需要改成监听合约里的事件，然后在同步数据库
+
+```ts
+app/api/rwa/subscribe/route.ts
+```
+
+### 这部分代码省去，改在监听代码里调用
+```ts
+// 从链上读真实 totalRaised
+    const asset = await contract.assets(id);
+
+    // asset.totalRaised 是 6 decimals
+    const totalRaisedHuman = Number(ethers.formatUnits(asset.totalRaised, 6));
+
+    // 所以这里必须用原始 usdtAmount (人类单位)
+    await pool.query(
+      `
+    UPDATE assets
+    SET total_raised = $1,
+        updated_at = now()
+    WHERE token_id = $2
+    `,
+      [totalRaisedHuman, id],
+    );
+```
+
+
+#### 目标：监听你合约里的事件：
+
+```ts
+event Subscribed(address investor, uint256 id, uint256 usdtAmount);
+```
+
+当有人认购成功：
+- 插入 investments 表
+- 更新 assets.total_raised
+
+
+## 8.怎么监听
+
+### 在 Vercel 上正确监听链上事件的方式
+
+> 用定时 Cron + queryFilter 轮询
+
+架构
+
+```ts
+Vercel Cron
+    ↓
+调用 /api/cron/sync
+    ↓
+读取 last_block
+    ↓
+queryFilter(Susbcribed)
+    ↓
+更新数据库
+    ↓
+更新 last_block
+```
+
+#### > 第一步：建同步状态表
+```sql
+CREATE TABLE chain_sync (
+  id integer primary key,
+  last_block integer
+);
+
+INSERT INTO chain_sync VALUES (1, 0);
+```
+#### > 第二步：创建 API
+
+
+```ts
+app/api/cron/sync/route.ts
+
+
+可直接上生产的最终版本（适配 Vercel + Postgres + ethers v6）。
+
+这个版本解决：
+
+✅ 区块分段同步（防超时）
+
+✅ 数据库事务
+
+✅ 防并发（advisory lock）
+
+✅ 不丢事件
+
+✅ 不重复插入
+
+✅ 避免重复链上读取
+
+✅ 修复你 last_block 参数错误（你多包了一层数组 ❌）
+
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { NextResponse } from "next/server";
+import { ethers } from "ethers";
+import pool from "@/lib/db";
+import RWAArtifact from "@/abi/RWAPlatform1155.json";
+
+const MAX_BLOCK_RANGE = 2000;
+const LOCK_ID = 987654; // 随便一个固定整数
+
+export async function GET() {
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    // 🔒 防止并发 cron
+    await client.query("SELECT pg_advisory_xact_lock($1)", [LOCK_ID]);
+
+    const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
+    const contract = new ethers.Contract(
+      process.env.RWA_CONTRACT!,
+      RWAArtifact.abi,
+      provider
+    );
+
+    const iface = new ethers.Interface(RWAArtifact.abi);
+
+    // 1️⃣ 读取上次同步区块
+    const { rows } = await client.query(
+      "SELECT last_block FROM chain_sync WHERE id = 1 FOR UPDATE"
+    );
+
+    const lastBlock = Number(rows[0]?.last_block ?? 0);
+
+    // 2️⃣ 当前区块
+    const currentBlock = await provider.getBlockNumber();
+
+    if (currentBlock <= lastBlock) {
+      await client.query("COMMIT");
+      return NextResponse.json({ message: "No new blocks" });
+    }
+
+    // 3️⃣ 分段同步
+    const toBlock =
+      currentBlock - lastBlock > MAX_BLOCK_RANGE
+        ? lastBlock + MAX_BLOCK_RANGE
+        : currentBlock;
+
+    const filter = contract.filters.Subscribed();
+
+    const logs = await contract.queryFilter(
+      filter,
+      lastBlock + 1,
+      toBlock
+    );
+
+    // 🧠 用 Map 防止重复读取同一资产
+    const updatedAssets = new Map<number, boolean>();
+
+    for (const log of logs) {
+      try {
+        const parsed = iface.parseLog(log);
+
+        if (parsed?.name !== "Subscribed") continue;
+
+        const investor = parsed.args.investor as string;
+        const id = Number(parsed.args.id);
+        const usdtAmount = parsed.args.usdtAmount as bigint;
+
+        const usdtHuman = Number(
+          ethers.formatUnits(usdtAmount, 6)
+        );
+
+        // 1️⃣ 插入投资记录（防重复）
+        await client.query(
+          `
+          INSERT INTO investments (
+            asset_token_id,
+            investor_address,
+            usdt_amount,
+            tx_hash,
+            block_number
+          )
+          VALUES ($1,$2,$3,$4,$5)
+          ON CONFLICT (tx_hash) DO NOTHING
+          `,
+          [
+            id,
+            investor,
+            usdtHuman,
+            log.transactionHash,
+            log.blockNumber
+          ]
+        );
+
+        // 2️⃣ 每个资产只读取一次链上 totalRaised
+        if (!updatedAssets.has(id)) {
+          const asset = await contract.assets(id);
+
+          const totalRaisedHuman = Number(
+            ethers.formatUnits(asset.totalRaised, 6)
+          );
+
+          await client.query(
+            `
+            UPDATE assets
+            SET total_raised = $1,
+                updated_at = now()
+            WHERE token_id = $2
+            `,
+            [totalRaisedHuman, id]
+          );
+
+          updatedAssets.set(id, true);
+        }
+      } catch {
+        // 解析失败忽略
+      }
+    }
+
+    // 4️⃣ 更新 last_block（关键修复点）
+    await client.query(
+      "UPDATE chain_sync SET last_block = $1 WHERE id = 1",
+      [toBlock] // ✅ 这里不能是 [[toBlock]]
+    );
+
+    await client.query("COMMIT");
+
+    return NextResponse.json({
+      success: true,
+      fromBlock: lastBlock + 1,
+      toBlock,
+      eventsFound: logs.length
+    });
+
+  } catch (err: any) {
+    await client.query("ROLLBACK");
+
+    return NextResponse.json(
+      { error: err.message },
+      { status: 500 }
+    );
+  } finally {
+    client.release();
+  }
+}
+```
+
+
+#### > 第三步：配置 Vercel Cron
+
+在 vercel.json 加：
+
+```ts
+{
+  "crons": [
+    {
+      "path": "/api/cron/sync",
+      "schedule": "*/1 * * * *"
+    }
+  ]
+}
+表示：每分钟执行一次
+```
+
