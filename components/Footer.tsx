@@ -135,7 +135,7 @@ export default function Footer() {
             <MuiLink href="/investor" color="grey.500" underline="hover">
               投资人看板
             </MuiLink>
-            <MuiLink href="/devlog" color="orange" underline="hover">
+            <MuiLink href="/devlog" color="red.500" underline="hover">
               开发记录
             </MuiLink>
 

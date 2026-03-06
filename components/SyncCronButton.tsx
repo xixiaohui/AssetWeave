@@ -58,7 +58,7 @@ export default function SyncCronButton() {
             disabled={loading}
             startIcon={loading ? <CircularProgress size={18} /> : null}
           >
-            {loading ? "Syncing..." : "Run Sync"}
+            {loading ? "同步中..." : "运行同步Cron"}
           </Button>
 
           {error && <Alert severity="error">{error}</Alert>}
