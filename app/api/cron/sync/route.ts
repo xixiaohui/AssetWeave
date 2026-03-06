@@ -7,12 +7,12 @@ import RWAArtifact from "@/abi/RWAPlatform1155.json";
 const MAX_BLOCK_RANGE = 2000;
 const LOCK_ID = 987654; // 随便一个固定整数
 
-export async function GET(req: NextRequest) {
-    
+export async function POST(req: NextRequest) {
+
   if (
     req.headers.get("authorization") !== `Bearer ${process.env.CRON_SECRET}`
   ) {
-    return new NextResponse("Unauthorized", { status: 401 });
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const client = await pool.connect();
@@ -42,6 +42,8 @@ export async function GET(req: NextRequest) {
     // 2️⃣ 当前区块
     const currentBlock = await provider.getBlockNumber();
 
+    console.log(`Current block: ${currentBlock}`);
+
     if (currentBlock <= lastBlock) {
       await client.query("COMMIT");
       return NextResponse.json({ message: "No new blocks" });
@@ -52,6 +54,8 @@ export async function GET(req: NextRequest) {
       currentBlock - lastBlock > MAX_BLOCK_RANGE
         ? lastBlock + MAX_BLOCK_RANGE
         : currentBlock;
+
+    console.log(`Syncing from block ${lastBlock + 1} to ${toBlock}`);
 
     const filter = contract.filters.Subscribed();
 
@@ -126,6 +130,7 @@ export async function GET(req: NextRequest) {
       fromBlock: lastBlock + 1,
       toBlock,
       eventsFound: logs.length,
+      currentBlock:currentBlock,
     });
   } catch (err: any) {
     await client.query("ROLLBACK");

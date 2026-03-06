@@ -11,6 +11,7 @@ import {
   Typography,
   Stack,
 } from "@mui/material";
+import SyncCronButton from "@/components/SyncCronButton";
 
 export default function RWAManagementPage() {
   const [log, setLog] = useState<string>("");
@@ -32,6 +33,9 @@ export default function RWAManagementPage() {
       </Typography>
 
       <Stack spacing={4}>
+
+        <SyncCronButton />
+
         {/* 1️⃣ 注册资产 */}
         <Card>
           <CardContent>
@@ -124,6 +128,8 @@ export default function RWAManagementPage() {
             </Stack>
           </CardContent>
         </Card>
+
+        
 
         {/* 日志 */}
         <Typography variant="body1" sx={{ mt: 2 }}>

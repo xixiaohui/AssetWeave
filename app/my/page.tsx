@@ -5,6 +5,7 @@ import { Box, Typography, Button, Grid, Card, CardContent, Stack } from "@mui/ma
 import { useWallets } from "@privy-io/react-auth";
 import FaucetButton from "./FaucetButton";
 import XUSDTBalance from "./XUSDTBalance";
+import SyncCronButton from "@/components/SyncCronButton";
 
 export default function MyPage() {
   const { wallets } = useWallets();
@@ -67,6 +68,8 @@ export default function MyPage() {
                 <FaucetButton />
 
                 <XUSDTBalance />
+
+                
               </Stack>
             </CardContent>
           </Card>
