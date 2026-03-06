@@ -15,8 +15,12 @@ import {
   Snackbar,
   Alert,
 } from "@mui/material";
+import { useWallets } from "@privy-io/react-auth";
 
 export default function AssetBuyPage({ asset }: any) {
+  const { wallets } = useWallets();
+  const address = wallets?.[0]?.address;
+
   const [amount, setAmount] = useState(10);
   const [loading, setLoading] = useState(false);
 
@@ -30,6 +34,8 @@ export default function AssetBuyPage({ asset }: any) {
   const [investorCount, setInvestorCount] = useState<number>(0);
 
   const handleCloseSnackbar = () => setSnackbarOpen(false);
+
+
 
   // 🔄 获取资产链上数据
   const fetchAssetStatus = async () => {
@@ -63,7 +69,7 @@ export default function AssetBuyPage({ asset }: any) {
       const res = await fetch("/api/rwa/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: asset.token_id, usdtAmount: amount }),
+        body: JSON.stringify({ id: asset.token_id, usdtAmount: amount,userAddress: address }), // 这里的 userAddress 应该从用户的连接钱包中获取
       });
 
       const data = await res.json();

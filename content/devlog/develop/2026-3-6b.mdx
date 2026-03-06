@@ -1,0 +1,173 @@
+---
+title: KYC认证和投资人资格验证
+description: 在投资人提交认购请求之前，我们需要确保他们已经完成了KYC认证，并且符合投资资格。这个过程涉及到前端页面的设计、智能合约的逻辑处理以及后端数据库的管理...
+date: "2026-03-06"
+tags: [RWA, Web3, Next.js]
+cover: /images/rwa-cover.jpg
+---
+
+
+## 1.如何KYC认证和投资人资格验证
+```solidity
+  // ===== KYC =====
+  function setWhitelist(address user, bool ok) external onlyOwner {
+      whitelisted[user] = ok;
+  }
+```
+在智能合约中，我们定义了一个 `setWhitelist` 函数，这个函数允许合约的所有者（Owner）将一个地址添加到白名单中，或者从白名单中移除。这个函数接受两个参数：`user`（需要设置的地址）和 `ok`（一个布尔值，表示是否将该地址添加到白名单中）。
+当投资人提交认购请求时，智能合约会检查他们的地址是否在白名单中，以确定他们是否已经完成了KYC认证并且符合投资资格。如果地址不在白名单中，智能合约会拒绝他们的认购请求，并且可能会返回一个错误信息，提示他们需要先完成KYC认证。
+这个KYC认证的过程通常是在前端页面上完成的，投资人需要提供相关的身份信息和文件，经过审核后，管理员会将他们的地址添加到智能合约的白名单中。这样，在投资人提交认购请求时，智能合约就可以通过检查白名单来验证他们的资格。 
+在前端页面上，我们可以设计一个KYC认证的流程，投资人需要上传相关的身份信息和文件，经过审核后，管理员会将他们的地址添加到智能合约的白名单中。这样，在投资人提交认购请求时，智能合约就可以通过检查白名单来验证他们的资格。
+在后端数据库中，我们也可以维护一个投资人信息表，记录他们的KYC认证状态和相关信息。当投资人提交认购请求时，我们可以先查询数据库，确认他们的KYC认证状态是否有效，然后再调用智能合约的 `subscribe` 函数进行认购操作。这样可以确保只有符合资格的投资人才能参与认购，并且我们也可以在数据库中记录他们的投资行为和相关信息。
+
+```
+认购失败: execution reverted: "RWA: no KYC" (action="estimateGas", 
+data="0x08c379a00000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000b5257413a206e6f204b5943000000000000000000000000000000000000000000", 
+reason="RWA: no KYC", transaction={ "data": "0x84370813000000000000000000000000000000000000000000000000000000000000000b0000000000000000000000000000000000000000000000000000000000989680", 
+"from": "0xd12478358C37f5E86996eB917558b0ebfCc8A0e1", "to": "0xCeDe98d5B92dc354Eb1d544be3481C516D18ea8E" }, 
+invocation=null, revert={ "args": [ "RWA: no KYC" ], "name": "Error", "signature": "Error(string)" }, code=CALL_EXCEPTION, version=6.16.0)
+
+```
+## 2. 典型设计
+链上白名单 + 数据库同步 的典型设计
+核心目标：
+
+合约设置白名单
+
+数据库保存白名单状态
+
+API 调用合约
+
+同步数据库
+
+一个 完整架构方案（合约 + DB + API）
+### 一、Solidity 合约函数
+
+```solidity
+function setWhitelist(address user, bool ok) external onlyOwner {
+    whitelisted[user] = ok;
+}
+```
+建议 加一个 Event，方便链上同步。
+```solidity
+event WhitelistUpdated(address indexed user, bool ok);
+
+function setWhitelist(address user, bool ok) external onlyOwner {
+    whitelisted[user] = ok;
+    emit WhitelistUpdated(user, ok);
+}
+```
+可以用 cron 扫事件 或 监听事件同步数据库
+
+### 二、数据库设计
+数据库中可以设计一个表来保存投资人的 KYC 认证状态，例如：
+
+```sql
+CREATE TABLE whitelist (
+  id SERIAL PRIMARY KEY,
+  wallet_address TEXT UNIQUE NOT NULL,
+  is_whitelisted BOOLEAN DEFAULT false,
+  updated_at TIMESTAMP DEFAULT now()
+);
+| 字段             | 说明    |
+| -------------- | ----- |
+| wallet_address | 钱包地址  |
+| is_whitelisted | 是否白名单 |
+| updated_at     | 更新时间  |
+
+```
+
+### 三、管理员 API 调用合约
+
+Next.js API 路由示例：
+
+```javascript
+/api/rwa/whitelist
+```
+
+示例：
+```ts
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { NextRequest, NextResponse } from "next/server";
+import pool from "@/lib/db";
+import { getRWAPlatformContract } from "@/lib/rwaPlatformContract";
+
+export async function POST(req: NextRequest) {
+  try {
+    const { address, ok } = await req.json();
+
+    if (!address) {
+      return NextResponse.json({ error: "Missing address" }, { status: 400 });
+    }
+
+    const contract = getRWAPlatformContract();
+
+    // 调用链上
+    const tx = await contract.setWhitelist(address, ok);
+    const receipt = await tx.wait();
+
+    // 同步数据库
+    await pool.query(
+      `
+      INSERT INTO whitelist (wallet_address, is_whitelisted)
+      VALUES ($1,$2)
+      ON CONFLICT (wallet_address)
+      DO UPDATE SET
+        is_whitelisted = EXCLUDED.is_whitelisted,
+        updated_at = now()
+      `,
+      [address.toLowerCase(), ok],
+    );
+
+    return NextResponse.json({
+      success: true,
+      txHash: tx.hash,
+      blockNumber: receipt.blockNumber,
+    });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
+}
+```
+
+### 四、同步链上白名单（可选）
+如果你担心：
+
+数据库丢失
+
+管理员直接链上操作
+
+可以做 cron 同步事件
+
+监听：
+```
+WhitelistUpdated(address user, bool ok)
+```
+示例：
+```ts
+const filter = contract.filters.WhitelistUpdated();
+
+const logs = await contract.queryFilter(filter, fromBlock, toBlock);
+```
+
+解析：
+```ts
+for (const log of logs) {
+  const parsed = iface.parseLog(log);
+
+  const user = parsed.args.user;
+  const ok = parsed.args.ok;
+
+  await pool.query(
+    `
+    INSERT INTO whitelist (wallet_address, is_whitelisted)
+    VALUES ($1,$2)
+    ON CONFLICT (wallet_address)
+    DO UPDATE SET
+      is_whitelisted = EXCLUDED.is_whitelisted,
+      updated_at = now()
+    `,
+    [user.toLowerCase(), ok],
+  );
+}
+```

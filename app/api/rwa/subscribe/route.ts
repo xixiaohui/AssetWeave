@@ -6,10 +6,19 @@ import pool from "@/lib/db";
 
 export async function POST(req: NextRequest) {
   try {
-    const { id, usdtAmount } = await req.json();
+    const { id, usdtAmount,userAddress} = await req.json();
 
     if (!id || !usdtAmount) {
       return NextResponse.json({ error: "Missing params" }, { status: 400 });
+    }
+
+    const { rows } = await pool.query(
+      "SELECT is_whitelisted FROM whitelist WHERE wallet_address=$1",
+      [userAddress]
+    );
+
+    if (!rows[0]?.is_whitelisted) {
+      return NextResponse.json({ error: "Not whitelisted" }, { status: 403 });
     }
 
     const contract = getRWAPlatformContract();
