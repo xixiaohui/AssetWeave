@@ -37,6 +37,7 @@
     "react-hook-form": "^7.71.2",
     "react-tsparticles": "^2.12.2",
     "rehype-pretty-code": "^0.14.1",
+    "swr": "^2.4.1",
     "tsparticles": "^3.9.1",
     "zod": "^3.25.76"
   },

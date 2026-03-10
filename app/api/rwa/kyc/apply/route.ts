@@ -7,6 +7,7 @@ export async function POST(req: NextRequest){
 
   const { wallet, full_name, country, id_type, id_number } = body
 
+
   await pool.query(
 
     `insert into rwa_kyc_requests

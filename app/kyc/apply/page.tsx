@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Container,
   Card,
@@ -21,18 +21,22 @@ export default function KycApplyPage() {
   const [loading,setLoading] = useState(false)
   const [success,setSuccess] = useState(false)
 
+
   const [form,setForm] = useState({
-    wallet:address,
     full_name:"",
     country:"",
     id_type:"",
     id_number:""
   })
 
+ 
+
   const submit = async ()=>{
 
-    if(!form.wallet || !form.full_name || !form.id_type || !form.id_number){
-      alert("请填写完整信息")
+    console.log("Submitting KYC application:", form)
+
+    if(!form.full_name || !form.country || !form.id_type || !form.id_number){
+      alert("请填写完整信息!")
       return
     }
 
@@ -41,7 +45,10 @@ export default function KycApplyPage() {
     await fetch("/api/rwa/kyc/apply",{
       method:"POST",
       headers:{ "Content-Type":"application/json"},
-      body: JSON.stringify(form)
+      body: JSON.stringify({
+        ...form,
+        wallet: address
+      })
     })
 
     setLoading(false)
@@ -65,7 +72,7 @@ export default function KycApplyPage() {
           <Stack spacing={3}>
             <TextField
               label="钱包地址"
-              value={form.wallet}
+              value={address || ""}
               fullWidth
               disabled
             />
