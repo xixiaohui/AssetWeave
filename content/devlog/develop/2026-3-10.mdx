@@ -481,3 +481,48 @@ export default function AdminKycPage() {
 
 
 
+## 2.KYC通过后，同步白名单列表，同步链上数据
+
+```
+结果
+Whitelist updated successfully for wallet: 
+{success: true, txHash: '0x0db22ac5671ac59f022448688f84809506bc10dc243772bda76ce21aa142791c', blockNumber: 10419577}
+
+```
+
+```ts
+const approve = async (id: string) => {
+    console.log("Approving KYC ID:", id);
+    const res = await fetch("/api/admin/kyc",{
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ id, status: "approved" })
+    });
+    const data = await res.json();
+    console.log("拿到钱包地址",data.wallet_address); // 拿到钱包地址
+
+    if(res.ok){
+      console.log("KYC approved successfully for ID:", id);
+      mutate(); // 刷新列表
+    }
+
+    uptoBlockChain(data.wallet_address) // 同步链上白名单
+  };
+
+  //同步链上白名单
+  const uptoBlockChain = async (wallet_address: string) => {
+    const res = await fetch("/api/rwa/whitelist",{
+      method: "POST",
+      headers: {  "Content-Type": "application/json" },
+      body: JSON.stringify({ address: wallet_address, ok: true })
+    });
+    const data = await res.json(); 
+    
+    if(res.ok){
+      console.log("Whitelist updated successfully for wallet:", data);
+    }
+  }
+
+  ```

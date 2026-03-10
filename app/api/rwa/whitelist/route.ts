@@ -11,12 +11,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing address" }, { status: 400 });
     }
 
+    // console.log("Received whitelist update request:", { address, ok });
+    // return  NextResponse.json({ error: "Whitelist update is currently disabled" }, { status: 503 });
+
     const contract = getRWAPlatformContract();
 
     // 调用链上
     const tx = await contract.setWhitelist(address, ok);
     const receipt = await tx.wait();
-
+    
     // 同步数据库
     await pool.query(
       `

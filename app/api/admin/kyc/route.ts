@@ -63,13 +63,18 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 更新 KYC 状态
-    await pool.query(
-      "UPDATE rwa_kyc_requests SET status = $1 WHERE id = $2",
+    // 更新 KYC 状态并返回 wallet_address
+    const { rows } = await pool.query(
+      "UPDATE rwa_kyc_requests SET status = $1 WHERE id = $2 RETURNING wallet_address",
       [status, id]
     );
 
-    return NextResponse.json({ success: true });
+    if (rows.length === 0) {
+      return NextResponse.json({ error: "未找到对应 KYC 请求" }, { status: 404 });
+    }
+
+    // 返回 wallet_address
+    return NextResponse.json({ success: true, wallet_address: rows[0].wallet_address });
   } catch (err) {
     console.error(err);
     return NextResponse.json({ error: "更新 KYC 状态失败" }, { status: 500 });

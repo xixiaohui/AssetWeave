@@ -52,24 +52,54 @@ export default function AdminKycPage() {
 
   const rows = data || [];
 
+  //同步链上白名单
+  const uptoBlockChain = async (wallet_address: string) => {
+    const res = await fetch("/api/rwa/whitelist",{
+      method: "POST",
+      headers: {  "Content-Type": "application/json" },
+      body: JSON.stringify({ address: wallet_address, ok: true })
+    });
+    const data = await res.json(); 
+    
+    if(res.ok){
+      console.log("Whitelist updated successfully for wallet:", data);
+    }
+  }
+
   const approve = async (id: string) => {
     console.log("Approving KYC ID:", id);
-    await fetch("/api/admin/kyc",{
+    const res = await fetch("/api/admin/kyc",{
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ id, status: "approved" })
     });
+    const data = await res.json();
+    console.log("拿到钱包地址",data.wallet_address); // 拿到钱包地址
+
+    if(res.ok){
+      console.log("KYC approved successfully for ID:", id);
+      mutate(); // 刷新列表
+    }
+
+    uptoBlockChain(data.wallet_address) // 同步链上白名单
   };
 
+
   const reject = async (id: string) => {
-    await fetch("/api/admin/kyc",{
+    const res = await fetch("/api/admin/kyc",{
       method: "POST",
       headers: {  "Content-Type": "application/json" },
       body: JSON.stringify({ id, status: "rejected" })
     });
+    if(res.ok){
+      console.log("KYC approved successfully for ID:", id);
+      mutate(); // 刷新列表
+    }
   };
+
+  
 
   const columns: GridColDef[] = [
     {

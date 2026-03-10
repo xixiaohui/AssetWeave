@@ -12,10 +12,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing params" }, { status: 400 });
     }
 
+    console.log("Received subscribe request:", { id, usdtAmount,userAddress });
+
     const { rows } = await pool.query(
-      "SELECT is_whitelisted FROM whitelist WHERE wallet_address=$1",
+      "SELECT is_whitelisted FROM whitelist WHERE LOWER(wallet_address) = LOWER($1)",
       [userAddress]
     );
+    console.log("Whitelist query result:", rows);
 
     if (!rows[0]?.is_whitelisted) {
       return NextResponse.json({ error: "Not whitelisted!还没有通过KYC认证" }, { status: 403 });
