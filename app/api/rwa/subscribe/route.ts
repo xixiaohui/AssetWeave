@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
     );
 
     if (!rows[0]?.is_whitelisted) {
-      return NextResponse.json({ error: "Not whitelisted" }, { status: 403 });
+      return NextResponse.json({ error: "Not whitelisted!还没有通过KYC认证" }, { status: 403 });
     }
 
     const contract = getRWAPlatformContract();

@@ -1,6 +1,6 @@
 "use client";
 
-import { Box, Typography, Button, Grid, Card, CardContent, Stack } from "@mui/material";
+import { Box, Typography, Button, Grid, Card, CardContent, Stack, Link } from "@mui/material";
 
 import { useWallets } from "@privy-io/react-auth";
 import FaucetButton from "./FaucetButton";
@@ -57,19 +57,20 @@ export default function MyPage() {
                 </Typography>
 
                 <Button
+                  component={Link}
+                  href="/kyc/apply"
                   variant="contained"
                   size="large"
                   fullWidth
                   sx={{ borderRadius: 3 }}
                 >
-                  KYC 认证
+                  KYC 认证申请
                 </Button>
 
                 <FaucetButton />
 
                 <XUSDTBalance />
 
-                
               </Stack>
             </CardContent>
           </Card>

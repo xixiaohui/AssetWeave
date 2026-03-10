@@ -56,7 +56,7 @@ export default function XUSDTBalance() {
       ) : error ? (
         <Typography color="error">{error}</Typography>
       ) : (
-        <Typography variant="body1">
+        <Typography variant="h6">
           {balance !== null ? balance : "未连接钱包"}
         </Typography>
       )}

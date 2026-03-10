@@ -18,6 +18,7 @@
     "@mui/icons-material": "^7.3.7",
     "@mui/material": "^7.3.7",
     "@mui/material-nextjs": "^7.3.7",
+    "@mui/x-data-grid": "^8.27.4",
     "@next/mdx": "^16.1.6",
     "@privy-io/react-auth": "^3.13.1",
     "@types/mdx": "^2.0.13",
