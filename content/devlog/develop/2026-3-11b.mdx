@@ -1,0 +1,137 @@
+---
+title: ZeroClaw
+description: ZeroClaw + Deepseek + Telegrame
+date: "2026-03-11"
+tags: [ZeroClaw,Deepseek,Telegrame]
+cover: /images/rwa-cover.jpg
+---
+
+
+## 1.安装
+```
+git clone https://github.com/zeroclaw-labs/zeroclaw.git
+cd zeroclaw
+
+./install.sh
+
+Next steps:
+  zeroclaw status
+  zeroclaw agent -m "Hello, ZeroClaw!"
+  zeroclaw gateway
+
+source $HOME/.cargo/env
+echo $PATH
+which zeroclaw
+
+永久生效
+echo 'source $HOME/.cargo/env' >> ~/.bashrc
+source ~/.bashrc
+```
+
+```
+🦀 ZeroClaw Status
+
+Version:     0.1.7
+Workspace:   /root/.zeroclaw/workspace
+Config:      /root/.zeroclaw/config.toml
+
+🤖 Provider:      openrouter
+   Model:         anthropic/claude-sonnet-4.6
+📊 Observability:  none
+🧾 Trace storage:  none (state/runtime-trace.jsonl)
+🛡️  Autonomy:      Supervised
+⚙️  Runtime:       native
+💓 Heartbeat:      disabled
+🧠 Memory:         sqlite (auto-save: on)
+
+Security:
+  Workspace only:    true
+  Allowed roots:     (none)
+  Allowed commands:  git, npm, cargo, ls, cat, grep, find, echo, pwd, wc, head, tail, date
+  Max actions/hour:  20
+  Max cost/day:      $5.00
+  OTP enabled:       false
+  E-stop enabled:    false
+
+Channels:
+  CLI:      ✅ always
+  Telegram  ❌ not configured
+  Discord   ❌ not configured
+  Slack     ❌ not configured
+  Mattermost ❌ not configured
+  iMessage  ❌ not configured
+  Matrix    ❌ not configured
+  Signal    ❌ not configured
+  WhatsApp  ❌ not configured
+  Linq      ❌ not configured
+  WATI      ❌ not configured
+  NextCloud Talk ❌ not configured
+  Email     ❌ not configured
+  IRC       ❌ not configured
+  Lark      ❌ not configured
+  Feishu    ❌ not configured
+  DingTalk  ❌ not configured
+  QQ Official ❌ not configured
+  Nostr     ❌ not configured
+  ClawdTalk ❌ not configured
+  Webhook   ❌ not configured
+
+Peripherals:
+  Enabled:   no
+  Boards:    0
+
+```
+
+## 2. 配置ai
+
+```
+zeroclaw onboard
+
+它会问你选择哪个提供商，选择 DeepSeek。
+输入你的 DeepSeek API Key。
+配置会保存到：
+/root/.zeroclaw/config.toml
+
+或者手动设置环境变量
+
+export DEEPSEEK_API_KEY="你的_api_key"
+
+```
+```
+  Workspace layout:
+    /root/.zeroclaw/workspace/
+    ├── sessions/
+    ├── memory/
+    ├── state/
+    ├── cron/
+    ├── skills/
+    ├── IDENTITY.md
+    ├── AGENTS.md
+    ├── HEARTBEAT.md
+    ├── SOUL.md
+    ├── USER.md
+    ├── TOOLS.md
+    ├── BOOTSTRAP.md
+    └── MEMORY.md
+  ✓ Workspace:  /root/.zeroclaw/workspace
+  ✓ Provider:   openrouter
+  ✓ Model:      anthropic/claude-sonnet-4.6
+  ✓ API Key:    not set (use --api-key or edit config.toml)
+  ✓ Security:   Supervised (workspace-scoped)
+  ✓ Memory:     sqlite (auto-save: on)
+  ✓ Secrets:    encrypted
+  ✓ Gateway:    pairing required (127.0.0.1:8080)
+  ✓ Tunnel:     none (local only)
+  ✓ Composio:   disabled (sovereign mode)
+
+  Config saved: /root/.zeroclaw/config.toml
+
+  Next steps:
+    1. Set your API key:  export OPENROUTER_API_KEY="sk-..."
+    2. Or edit:           ~/.zeroclaw/config.toml
+    3. Chat:              zeroclaw agent -m "Hello!"
+    4. Gateway:           zeroclaw gateway
+
+```
+
+

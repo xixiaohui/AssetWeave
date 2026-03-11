@@ -1,0 +1,212 @@
+---
+title: AI + Telegram机器人 + 工作助手服务
+description: 阿里云一键部署方案：把 AI + Telegram机器人 + 工作助手服务
+date: "2026-03-11"
+tags: [RWA, Web3, Next.js]
+cover: /images/rwa-cover.jpg
+---
+
+
+## 一、整体架构
+
+```
+阿里云 ECS
+│
+├ AI模型 (Ollama + Qwen)
+├ Telegram Bot
+├ Zeroclaw工作助手
+│
+├ 邮件监控
+├ 中国制造网询盘提醒
+└ 自动AI分析
+```
+
+## 二、第一步：准备服务器
+
+```
+apt update && apt upgrade -y
+
+apt install git python3 python3-pip -y
+```
+
+## 第二步：安装 AI模型
+
+我们使用 Ollama 运行模型。
+
+安装
+```
+curl -fsSL https://ollama.com/install.sh | sh
+
+```
+启动
+```
+ollama serve
+```
+
+下载模型（推荐轻量）：
+
+```
+ollama pull qwen2:1.5b
+```
+这个模型来自 Qwen2，比较省内存。
+
+测试 AI：
+
+```
+curl http://localhost:11434/api/generate \
+-d '{
+"model":"qwen2:1.5b",
+"prompt":"hello"
+}'
+```
+
+## 四、第三步：创建 Telegram 机器人
+
+
+在 Telegram 里搜索：
+
+BotFather
+发送：
+/newbot
+创建机器人后会得到：BOT TOKEN
+Use this token to access the HTTP API:
+8734099168:AAFvUwXPFBWz-****************
+Keep your token secure and store it safely, it can be used by anyone to control your bot.
+
+
+## 五、第四步：部署机器人程序
+
+改用deepseek
+```
+https://platform.deepseek.com
+
+进入：
+
+Billing / 充值
+
+注册 DeepSeek API
+
+进入 API Keys
+创建 Key
+类似：sk-xxxxxxxxxxxxxxxx
+
+第二步：在服务器安装依赖
+进入你刚刚创建的虚拟环境：
+source ai-env/bin/activate
+pip install openai
+
+测试 AI
+nano ai_test.py
+
+代码：
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="你的deepseek key",
+    base_url="https://api.deepseek.com"
+)
+
+response = client.chat.completions.create(
+    model="deepseek-chat",
+    messages=[
+        {"role": "user", "content": "你好，介绍一下自己"}
+    ]
+)
+
+print(response.choices[0].message.content)
+
+运行：
+python ai_test.py
+```
+
+## 六、服务器发送 Telegram 消息
+
+```
+安装库
+pip install python-telegram-bot
+
+测试代码：
+nano tg_test.py
+
+代码：
+import requests
+
+TOKEN = "你的bot token"
+CHAT_ID = "你的telegram id"
+
+text = "AI助手测试成功"
+
+url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
+
+requests.post(url, json={
+    "chat_id": CHAT_ID,
+    "text": text
+})
+
+我的公网地址
+96.47.160.152:57890
+
+# HTTP/HTTPS 代理
+export http_proxy="http://96.47.160.152:57890"
+export https_proxy="http://96.47.160.152:57890"
+export ftp_proxy="http://96.47.160.152:57890"
+
+# SOCKS5 代理（可选）
+export all_proxy="socks5://96.47.160.152:57890"
+
+# 忽略本地地址
+export no_proxy="localhost,127.0.0.1,::1"
+
+
+
+import requests
+
+TOKEN = "你的bot token"
+CHAT_ID = "你的chat id"
+text = "测试消息"
+
+url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
+
+proxies = {
+    "http": "http://96.47.160.152:57890",
+    "https": "http://96.47.160.152:57890"
+}
+
+requests.post(
+    url,
+    json={
+        "chat_id": CHAT_ID,
+        "text": text
+    },
+    proxies=proxies
+)
+```
+
+
+scp E:\workspace\tools\v2ray-linux-64.zip root@47.99.66.226:/root/
+
+## 七.使用钉钉机器人
+方法1（推荐）：创建虚拟环境
+```
+apt update
+apt install python3-venv -y
+
+python3 -m venv ai_env
+
+#### source ai_env/bin/activate
+
+pip install openai flask requests
+
+
+sudo apt update && sudo apt upgrade -y
+sudo apt install python3 python3-venv python3-pip git curl wget unzip -y
+
+python3 -m venv ~/ai-env
+source ~/ai-env/bin/activate
+
+
+
+
+
+
+
