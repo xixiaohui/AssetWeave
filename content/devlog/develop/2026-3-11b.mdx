@@ -489,6 +489,382 @@ find
 #### AI = 能工作
 
 #### ZeroClaw 是一个 AI Agent 运行框架，核心目标是让大模型（例如你用的 DeepSeek）不只是聊天，而是 可以执行任务、调用工具、自动化工作。
+简单理解
+```
+LLM（DeepSeek）
++ Tools / Skills
++ Runtime（Agent执行系统）
+= AI自动化助手
+```
+
+#### ZeroClaw 的核心能力完整拆解
+
+##### 一、AI Agent运行系统（核心能力）
+
+ZeroClaw 本质是一个 Agent Runtime。
+
+它可以：
+
+接收用户请求
+
+让 AI 思考
+
+决定是否调用工具
+
+执行任务
+
+返回结果
+
+
+```
+流程
+User
+ ↓
+Agent
+ ↓
+Reasoning
+ ↓
+Tool calls
+ ↓
+Result
+```
+
+##### 二、多渠道交互（Channels）
+
+ZeroClaw 最大特点之一是 多渠道 AI 控制中心。
+
+
+```
+| 渠道       | 说明    |
+| -------- | ----- |
+| CLI      | 命令行   |
+| Telegram | 聊天机器人 |
+| Discord  | 社群机器人 |
+| Slack    | 企业聊天  |
+| Email    | 邮件    |
+| Webhook  | API触发 |
+| WhatsApp | 需接第三方 |
+
+```
+
+##### 三、工具调用（Skills / Tools）
+
+这是 ZeroClaw 最重要能力。
+```
+| 类型       | 功能    |
+| -------- | ----- |
+| Shell    | 执行命令  |
+| File     | 读写文件  |
+| Git      | 代码管理  |
+| API      | 调接口   |
+| Webhook  | 触发系统  |
+| Database | 查询数据库 |
+
+```
+
+##### 四、自动化任务
+
+ZeroClaw 可以做 工作自动化。
+```
+分析日志
+生成报告
+监控服务器
+整理数据
+```
+
+```
+自动写代码
+自动部署
+自动发邮件
+```
+
+##### 五、工作空间系统（Workspace）
+
+
+ZeroClaw 有自己的 AI工作目录：
+
+~/.zeroclaw/workspace
+
+这里存放：
+```
+SOUL.md
+AGENTS.md
+files
+scripts
+data
+```
+
+AI可以：
+```
+创建文件
+修改文件
+读取文件
+分析文件
+```
+
+##### 六、Agent人格系统
+
+ZeroClaw 用两个文件定义 AI 行为：
+
+> SOUL.md
+定义：
+```
+AI人格
+AI目标
+AI行为
+```
+
+> AGENTS.md
+定义：
+```
+能力
+工作流程
+工具规则
+```
+
+##### 七、AI记忆系统
+
+你的配置里已经看到：
+你的配置里已经看到：
+
+Memory: sqlite
+
+ZeroClaw 可以：
+```
+保存历史
+记录任务
+存储数据
+```
+例如：
+```
+客户信息
+工作日志
+AI任务
+```
+
+##### 八、安全控制
+
+ZeroClaw 的安全机制非常严格。
+
+你看到的：
+```
+Allowed commands
+Workspace only
+Max actions/hour
+Max cost/day
+| 限制               | 作用        |
+| ---------------- | --------- |
+| Allowed commands | 防止AI乱执行命令 |
+| Workspace only   | 防止访问系统文件  |
+| Max actions      | 防止无限循环    |
+| Cost limit       | 控制API费用   |
+
+```
+
+##### 九、Agent自治模式
+
+ZeroClaw 有不同自治级别：
+
+```
+| 模式         | 说明   |
+| ---------- | ---- |
+| Manual     | 只聊天  |
+| Supervised | 需要确认 |
+| Autonomous | 自动执行 |
+```
+
+你现在是：
+
+Autonomy: Supervised
+
+##### 十、任务调度系统
+
+
+ZeroClaw 内部有：
+```
+scheduler
+heartbeat
+runtime
+```
+作用：
+```
+任务调度
+Agent运行
+状态监控
+```
+你 doctor 输出看到：
+```
+scheduler healthy
+heartbeat fresh
+```
+
+##### 十一、可扩展 API
+
+ZeroClaw 可以调用任何 API。
+例如：
+```
+CRM
+ERP
+邮箱
+Supabase
+Notion
+```
+通过 Skill。
+
+##### 十二、开发自动化
+
+很多人用 ZeroClaw 做：
+
+```
+AI编程助手
+AI DevOps
+AI数据分析
+
+```
+例如：
+
+```
+写代码
+debug
+自动部署
+```
+
+##### 十三、设备控制（Peripherals）
+
+ZeroClaw 还能控制：
+```
+IoT设备
+机器人
+传感器
+```
+例如：
+```
+Arduino
+Raspberry Pi
+```
+不过你现在没启用：
+```
+Peripherals: disabled
+```
+
+
+##### 十四、可构建的AI系统
+
+ZeroClaw 可以做很多系统：
+> 1 AI工作助手
+```
+写报告
+管理任务
+自动办公
+```
+> 2 AI客服
+```
+Telegram
+WhatsApp
+网站客服
+```
+> 3 AI运维
+
+```
+服务器监控
+日志分析
+自动修复
+```
+
+>4 AI外贸助手
+
+特别适合你：
+```
+邮件询盘分析
+客户分配
+自动回复
+CRM记录
+```
+
+##### 十五、总结：ZeroClaw能力
+
+核心能力可以概括为 8个字：
+
+> ## 思考 + 调用工具 + 自动执行
+
+
+完整能力
+```
+AI推理
+工具调用
+多渠道聊天
+自动化任务
+文件操作
+系统控制
+API集成
+记忆系统
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
