@@ -134,4 +134,365 @@ export DEEPSEEK_API_KEY="你的_api_key"
 
 ```
 
+## 2.链接deepseek api key
+
+```
+# Interactive onboarding wizard
+zeroclaw onboard --interactive
+
+# Or quick setup (no prompts, optional model specification)
+zeroclaw onboard --api-key sk-... --provider openrouter --model "openrouter/auto"
+
+# If config.toml already exists and you want to overwrite it
+zeroclaw onboard --force
+
+# Quickly repair channels/allowlists only
+zeroclaw onboard --channels-only
+
+# Chat with the agent
+zeroclaw agent -m "Hello, ZeroClaw!"
+
+# Interactive mode
+zeroclaw agent
+
+# Start the gateway (webhook server)
+zeroclaw gateway                # default: 127.0.0.1:42617
+zeroclaw gateway --port 0       # random port (security hardened)
+
+# Start full autonomous runtime
+zeroclaw daemon
+
+# Check status
+zeroclaw status
+zeroclaw auth status
+zeroclaw doctor
+zeroclaw channel doctor
+
+# Generate shell completions
+source <(zeroclaw completions bash)
+zeroclaw completions zsh > ~/.zfunc/_zeroclaw
+
+# Bind Telegram identity into allowlist
+zeroclaw channel bind-telegram 123456789
+
+# Integration diagnostics
+zeroclaw integrations info Telegram
+
+# Service + migration helpers
+zeroclaw service install
+zeroclaw service status
+zeroclaw service restart
+zeroclaw config schema
+zeroclaw migrate openclaw --dry-run
+zeroclaw migrate openclaw
+
+```
+
+## 3.配置通信渠道
+
+```
+zeroclaw onboard --channels-only
+
+选择：
+Telegram
+然后输入：
+Bot Token
+ZeroClaw 会保存到：
+
+~/.zeroclaw/config.toml
+
+类似：
+
+[channel.telegram]
+bot_token = "123456:AAHxxxxxxxxxxxx"
+
+
+```
+```
+获取你的 Telegram ID
+
+/start
+它会返回：
+
+Id: 123456789
+
+zeroclaw channel bind-telegram 123456789
+```
+
+### 4.最重要的5个命令
+
+```
+zeroclaw onboard
+zeroclaw agent
+zeroclaw gateway
+zeroclaw daemon
+zeroclaw doctor
+```
+
+
+### 5.状态提示
+```
+
+
+🤖 Provider:      deepseek
+Model:         deepseek-chat
+
+说明你已经正确接入：
+
+DeepSeek API
+
+模型：
+
+deepseek-chat
+
+如果你做：
+
+代码生成
+Agent自动化
+
+其实可以考虑：
+
+deepseek-coder
+```
+#### deepseek-coder
+```
+🦀 ZeroClaw Status
+
+Version:     0.1.7
+Workspace:   /root/.zeroclaw/workspace
+Config:      /root/.zeroclaw/config.toml
+
+🤖 Provider:      deepseek
+   Model:         deepseek-chat
+📊 Observability:  none
+🧾 Trace storage:  none (state/runtime-trace.jsonl)
+🛡️  Autonomy:      Supervised
+⚙️  Runtime:       native
+💓 Heartbeat:      disabled
+🧠 Memory:         sqlite (auto-save: on)
+
+Security:
+  Workspace only:    true
+  Allowed roots:     (none)
+  Allowed commands:  git, npm, cargo, ls, cat, grep, find, echo, pwd, wc, head, tail, date
+  Max actions/hour:  20
+  Max cost/day:      $5.00
+  OTP enabled:       false
+  E-stop enabled:    false
+
+Channels:
+  CLI:      ✅ always
+  Telegram  ✅ configured
+  Discord   ❌ not configured
+  Slack     ❌ not configured
+  Mattermost ❌ not configured
+  iMessage  ❌ not configured
+  Matrix    ❌ not configured
+  Signal    ❌ not configured
+  WhatsApp  ❌ not configured
+  Linq      ❌ not configured
+  WATI      ❌ not configured
+  NextCloud Talk ❌ not configured
+  Email     ❌ not configured
+  IRC       ❌ not configured
+  Lark      ❌ not configured
+  Feishu    ❌ not configured
+  DingTalk  ❌ not configured
+  QQ Official ❌ not configured
+  Nostr     ❌ not configured
+  ClawdTalk ❌ not configured
+  Webhook   ❌ not configured
+
+Peripherals:
+  Enabled:   no
+  Boards:    0
+```
+
+### 6.如何在退出zeroclaw daemon,telegram还能继续聊天
+
+linux使用后来运行命令
+
+#### zeroclaw daemon &
+
+查看运行进程
+ps aux | grep zeroclaw
+
+kill -9 72324
+
+```
+使用 tmux（服务器强烈推荐）
+创建会话：
+
+tmux new -s zeroclaw
+
+启动服务：
+
+zeroclaw daemon
+
+然后按：
+
+Ctrl + B
+D
+
+会 退出 tmux，但服务继续运行。
+
+重新进入：
+
+tmux attach -t zeroclaw
+```
+退出shell还是会自动杀死zerodaemon,
+#### 最基本的方法 亲测有效
+nohup zeroclaw daemon > ~/.zeroclaw/daemon.log 2>&1 &
+
+
+### 7.什么是ZeroClaw 的 skill / marketplace（AI能力市场）
+
+ZeroClaw 的 Skill / Marketplace 可以理解为：
+
+给 AI Agent 增加能力模块的地方（类似插件市场 / 工具市场）。
+
+Agent 本身只是一个 LLM（你现在用的是 DeepSeek），
+但通过 Skill，它可以：
+
+调 API
+
+访问数据库
+
+操作文件
+
+发邮件
+
+调用 CRM
+
+搜索网页
+
+控制系统
+
+所以：
+
+LLM + Skills = 真正可工作的 AI Agent
+
+#### ZeroClaw Skill 是什么
+
+Skill 本质是一个 工具接口（Tool）。
+
+结构通常是：
+
+User
+ ↓
+Agent
+ ↓
+Skill
+ ↓
+External system
+
+例如：
+
+Telegram
+ ↓
+ZeroClaw Agent
+ ↓
+Email Skill
+ ↓
+SMTP / Gmail
+
+Agent 就能 帮你发邮件。
+
+
+#### Skill Marketplace 是什么
+
+Marketplace 就是：
+
+AI能力插件库
+
+类似：
+
+ChatGPT Plugins
+
+LangChain Tools
+
+Zapier Apps
+
+在 Marketplace 里可以找到：
+
+Email
+Database
+Calendar
+Search
+CRM
+Webhook
+File storage
+
+安装后 Agent 就能调用。
+
+#### ZeroClaw Skill 类型
+
+> 1 API Skill
+
+调用外部 API。
+
+```yaml
+name: get_customer
+method: GET
+endpoint: https://api.crm.com/customer
+```
+> 2 Webhook Skill
+
+触发外部系统。
+
+例如
+```
+Telegram
+↓
+ZeroClaw
+↓
+Webhook
+↓
+CRM
+```
+
+```yaml
+name: create_lead
+method: POST
+endpoint: https://crm/api/lead
+```
+
+> 3 Local Tool Skill
+本地脚本。
+
+```
+python send_mail.py
+
+```
+
+> 4 Shell Skill
+执行系统命令：
+
+```
+git
+npm
+cargo
+ls
+cat
+grep
+find
+```
+### 8. Skill 的核心作用
+
+
+没有 Skill：
+
+#### AI = 只能聊天
+
+有 Skill：
+
+#### AI = 能工作
+
+#### ZeroClaw 是一个 AI Agent 运行框架，核心目标是让大模型（例如你用的 DeepSeek）不只是聊天，而是 可以执行任务、调用工具、自动化工作。
+
+
+
+
+
+
 
