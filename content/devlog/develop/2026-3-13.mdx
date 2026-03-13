@@ -1,0 +1,165 @@
+---
+title: ZeroClaw + OpenRouter + Telegrame
+description: ZeroClaw + Deepseek + Telegrame
+date: "2026-03-13"
+tags: [ZeroClaw,Deepseek,Telegrame]
+cover: /images/rwa-cover.jpg
+---
+
+
+# 1.ZeroClaw用Deepseek api不稳定，换用OpenRouter 
+
+## 申请OpenRouter API
+
+https://openrouter.ai/
+注册账户，某宝充值，获取API Key
+
+```
+zeroclaw onboard --api-key sk-or-*** --provider openrouter --model "openrouter/auto"
+
+zeroclaw onboard --channels-only
+
+zeroclaw channel bind-telegram 123456789
+
+nohup zeroclaw daemon > ~/.zeroclaw/daemon.log 2>&1 &
+
+ps aux | grep zeroclaw
+
+kill -9 72324
+
+集成检查
+zeroclaw integrations info Telegram
+```
+
+# 2.新的ai集成服务openclaw 配置openrouter + telegrame
+
+```
+root@vultr:~/openclaw-assistant/openclaw# ls
+AGENTS.md        docker-compose.yml          docs.acp.md       openclaw.mjs         pyproject.toml   src                           ui                           vitest.gateway.config.ts
+appcast.xml      Dockerfile                  extensions        openclaw.podman.env  README.md        Swabble                       vendor                       vitest.live.config.ts
+apps             Dockerfile.sandbox          fly.private.toml  package.json         render.yaml      test                          VISION.md                    vitest.scoped-config.ts
+assets           Dockerfile.sandbox-browser  fly.toml          packages             scripts          test-fixtures                 vitest.channels.config.ts    vitest.unit.config.ts
+CHANGELOG.md     Dockerfile.sandbox-common   git-hooks         patches              SECURITY.md      tsconfig.json                 vitest.config.ts             zizmor.yml
+CLAUDE.md        docker-setup.sh             knip.config.ts    pnpm-lock.yaml       setup-podman.sh  tsconfig.plugin-sdk.dts.json  vitest.e2e.config.ts
+CONTRIBUTING.md  docs                        LICENSE           pnpm-workspace.yaml  skills           tsdown.config.ts              vitest.extensions.config.ts
+
+```
+## 新建一个BotFather，获取Token
+```
+/start
+/newbot 
+```
+```
+Done! Congratulations on your new bot. You will find it at t.me/xxh2027_bot. You can now add a description, about section and profile picture for your bot, see /help for a list of commands. By the way, when you've finished creating your cool bot, ping our Bot Support if you want a better username for it. Just make sure the bot is fully operational before you do this.
+
+Use this token to access the HTTP API:
+8755110955:AAGQcfUOoxIBMvwbMYwZrHuAcH7QxGxaGno
+Keep your token secure and store it safely, it can be used by anyone to control your bot.
+
+For a description of the Bot API, see this page: https://core.telegram.org/bots/api
+```
+
+```
+Done! Congratulations on your new bot. You will find it at t.me/xxh2026_bot. You can now add a description, about section and profile picture for your bot, see /help for a list of commands. By the way, when you've finished creating your cool bot, ping our Bot Support if you want a better username for it. Just make sure the bot is fully operational before you do this.
+
+Use this token to access the HTTP API:
+8734099168:AAFvUwXPFBWz-4rd87_QTq5tmdwp-sWyeZo
+Keep your token secure and store it safely, it can be used by anyone to control your bot.
+
+For a description of the Bot API, see this page: https://core.telegram.org/bots/api
+```
+
+## 配置文件示例
+~/.openclaw/openclaw.json
+
+```
+{
+  channels: {
+    telegram: {
+      enabled: true,
+      botToken: "8755110955:AAGQcfUOoxIBMvwbMYwZrHuAcH7QxGxaGno",
+      dmPolicy: "pairing",
+      groups: { "*": { requireMention: true } },
+    },
+  },
+}
+```
+
+# 3. git 获取Openclaw源码，编译运行
+
+```
+git pull https://github.com/openclaw/openclaw.git
+
+```
+
+如何编译运行，见官方文档：
+```
+sudo apt update
+sudo apt install nodejs npm -y
+
+检查版本
+node -v
+npm -v
+```
+node 22.x.x以上 安装以来，编译openclaw会报错，提示需要node 22，解决办法如下：
+```
+一、安装 nvm（推荐方式）
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
+
+刷新环境：
+
+source ~/.bashrc
+
+检查：
+
+nvm --version
+二、安装 Node 22
+nvm install 22
+
+设置默认版本：
+
+nvm use 22
+nvm alias default 22
+
+检查：
+
+node -v
+
+应该看到：
+
+v22.x.x
+三、重新安装 pnpm
+
+Node 切换后需要重新装一次：
+
+npm install -g pnpm
+
+检查：
+
+pnpm -v
+```
+
+# 安装openclaw和配置
+
+```
+curl -fsSL https://openclaw.ai/install.sh | bash
+openclaw onboard
+
+export NODE_OPTIONS="--max-old-space-size=1536"
+```
+
+在telegram中搜索xxh2027_bot，发送消息测试
+/start
+
+```
+OpenClaw: access not configured.
+
+Your Telegram user id: 7181701725
+
+Pairing code: 335WNMWH
+
+Ask the bot owner to approve with:
+openclaw pairing approve telegram 335WNMWH
+```
+
+### openclaw pairing approve telegram 335WNMWH

@@ -1,0 +1,24 @@
+---
+title: 
+description: 
+date: "2026-03-13"
+tags: []
+cover: /images/rwa-cover.jpg
+---
+
+
+# 1.postgresql备份
+
+安装同一个postgresql版本的数据库，创建同名用户和数据库
+
+```
+psql --version
+
+安装
+sudo apt update
+sudo apt install postgresql-16
+
+
+sudo -u postgres pg_dumpall > alldb.sql
+
+scp alldb.sql root@208.167.233.53:/root/
