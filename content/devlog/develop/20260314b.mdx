@@ -56,7 +56,7 @@ msg.sender = 用户
 
 > 用户把私钥给你（绝对不能）
 
-## 4.
+## 4.contract 的三种调用方式
 ### 1 服务器 contract（管理员）
 ```
 export function getAdminRWAContract() {
@@ -118,7 +118,7 @@ export function getUserRWAContract() {
 用于：
 subscribe()
 ```
-## 4. 总结 重要认知
+### 4. 总结 重要认知
 
 ```
 | 类型              | signer          | 用途 |
@@ -130,7 +130,7 @@ subscribe()
 
 
 
-### 4 关键区别
+### 5 关键区别
 
 
 浏览器端用户钱包（Metamask / WalletConnect）
@@ -202,3 +202,5 @@ const contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, wallet);
 
 await contract.subscribeFor(id, userAddress, usdtAmount);
 ```
+
+

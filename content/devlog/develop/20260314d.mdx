@@ -1,0 +1,393 @@
+---
+title: RWAPlatform1155ProV2合约内容
+description: 多资产 ERC1155 RWA 平台
+date: "2026-03-14"
+tags: []
+cover: /images/rwa-cover.jpg
+---
+
+
+# 1.RWAPlatform1155ProV2合约内容
+
+```
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+/*
+RWAPlatform1155Pro V2 完整版
+=============================
+
+功能：
+1. 多资产 ERC1155 RWA
+2. USDT 募资
+3. KYC 白名单
+4. 管理员代购
+5. EIP712 签名认购（Web2 用户）
+6. 投资人列表
+7. 分红系统 + 批量分红
+8. 批量认购
+9. 用户仓位查询
+10. 不可转让 ERC1155 份额
+11. 到期赎回
+12. 平台手续费
+13. 资产 metadata
+14. Pausable 暂停
+15. 紧急提取
+*/
+
+import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
+import "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Supply.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/Pausable.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
+
+contract RWAPlatform1155ProV2 is
+    ERC1155,
+    ERC1155Supply,
+    Ownable,
+    ReentrancyGuard,
+    Pausable,
+    EIP712
+{
+    using SafeERC20 for IERC20;
+
+    IERC20 public immutable usdt;       // USDT 代币
+    uint256 private constant ACC = 1e18; // 分红精度因子
+
+    constructor(address _usdt)
+        ERC1155("")
+        Ownable(msg.sender)
+        EIP712("RWAPlatform", "1")
+    {
+        usdt = IERC20(_usdt);
+    }
+
+    // ===============================
+    // 资产结构
+    // ===============================
+    struct Asset {
+        uint256 price;       // 1 token = ? USDT
+        uint256 minRaise;
+        uint256 maxRaise;
+        uint256 totalRaised;
+        uint256 deadline;    // 募集截止时间
+        uint256 endTime;     // 赎回截止时间
+        bool running;
+        bool finished;
+    }
+
+    mapping(uint256 => Asset) public assets; // tokenId => Asset
+
+    // ===============================
+    // 资产 metadata
+    // ===============================
+    mapping(uint256 => string) public assetURI;
+
+    function setAssetURI(uint256 id,string memory uri_)
+        external
+        onlyOwner
+    {
+        assetURI[id] = uri_;
+    }
+
+    function uri(uint256 id)
+        public
+        view
+        override
+        returns(string memory)
+    {
+        return assetURI[id];
+    }
+
+    // ===============================
+    // KYC 白名单
+    // ===============================
+    mapping(address => bool) public whitelisted;
+
+    event WhitelistSet(address indexed user,bool ok);
+
+    function setWhitelist(address user,bool ok)
+        external
+        onlyOwner
+    {
+        whitelisted[user] = ok;
+        emit WhitelistSet(user,ok);
+    }
+
+    function batchWhitelist(address[] calldata users,bool ok)
+        external
+        onlyOwner
+    {
+        for(uint256 i;i<users.length;){
+            whitelisted[users[i]] = ok;
+            emit WhitelistSet(users[i],ok);
+            unchecked{ ++i; }
+        }
+    }
+
+    // ===============================
+    // 投资人列表
+    // ===============================
+    mapping(uint256 => address[]) public investors;
+    mapping(uint256 => mapping(address => bool)) public isInvestor;
+
+    function getInvestors(uint256 id)
+        external
+        view
+        returns(address[] memory)
+    {
+        return investors[id];
+    }
+
+    // ===============================
+    // 分红系统
+    // ===============================
+    mapping(uint256 => uint256) public accProfitPerShare;          // tokenId => 累计分红
+    mapping(uint256 => mapping(address => uint256)) public profitDebt; // tokenId => 用户已记账
+    mapping(uint256 => mapping(address => uint256)) public pending;    // tokenId => 待领取分红
+
+    // ===============================
+    // 用户投资记录
+    // ===============================
+    mapping(uint256 => mapping(address => uint256)) public investedAmount;
+
+    // ===============================
+    // 平台手续费
+    // ===============================
+    uint256 public platformFee = 200; // 200 = 2%
+    address public feeReceiver;
+
+    function setFeeReceiver(address _receiver) external onlyOwner{
+        feeReceiver = _receiver;
+    }
+
+    // ===============================
+    // EIP712 签名认购
+    // ===============================
+    mapping(address => uint256) public nonces;
+    bytes32 public constant SUBSCRIBE_TYPEHASH =
+        keccak256("Subscribe(address user,uint256 assetId,uint256 amount,uint256 nonce)");
+
+    // ===============================
+    // 事件
+    // ===============================
+    event AssetRegistered(uint256 indexed id);
+    event AssetStarted(uint256 indexed id);
+    event Subscribed(address indexed user,uint256 indexed assetId,uint256 usdtAmount,uint256 tokenAmount);
+    event AdminSubscribed(address indexed admin,address indexed user,uint256 indexed assetId,uint256 usdtAmount,uint256 tokenAmount);
+    event ProfitInjected(uint256 indexed assetId,uint256 amount);
+    event Claimed(address indexed user,uint256 indexed assetId,uint256 amount);
+    event Redeemed(address indexed user,uint256 indexed assetId,uint256 principal,uint256 profit);
+
+    // ===============================
+    // 注册资产
+    // ===============================
+    function registerAsset(
+        uint256 id,
+        uint256 price,
+        uint256 minRaise,
+        uint256 maxRaise,
+        uint256 deadline,
+        uint256 duration
+    )
+        external
+        onlyOwner
+    {
+        require(assets[id].price == 0,"exists");
+        assets[id] = Asset(price,minRaise,maxRaise,0,deadline,deadline+duration,false,false);
+        emit AssetRegistered(id);
+    }
+
+    // ===============================
+    // 更新分红
+    // ===============================
+    function _updateProfit(uint256 id,address user) internal {
+        if(user == address(0)) return;
+        uint256 bal = balanceOf(user,id);
+        if(bal == 0){
+            profitDebt[id][user] = 0;
+            return;
+        }
+        uint256 accumulated = (bal * accProfitPerShare[id]) / ACC;
+        uint256 owing = accumulated - profitDebt[id][user];
+        if(owing > 0){
+            pending[id][user] += owing;
+        }
+        profitDebt[id][user] = accumulated;
+    }
+
+    // ===============================
+    // 内部认购
+    // ===============================
+    function _subscribe(address user,uint256 id,uint256 usdtAmount) internal {
+        Asset storage a = assets[id];
+        require(block.timestamp < a.deadline,"ended");
+        require(whitelisted[user],"no KYC");
+        require(a.totalRaised + usdtAmount <= a.maxRaise,"over raise");
+        require(usdtAmount % a.price == 0,"invalid");
+
+        uint256 tokenAmount = usdtAmount / a.price;
+
+        a.totalRaised += usdtAmount;
+        investedAmount[id][user] += usdtAmount;
+
+        if(!isInvestor[id][user]){
+            investors[id].push(user);
+            isInvestor[id][user] = true;
+        }
+
+        _mint(user,id,tokenAmount,"");
+        emit Subscribed(user,id,usdtAmount,tokenAmount);
+    }
+
+    // ===============================
+    // 用户认购
+    // ===============================
+    function subscribe(uint256 id,uint256 usdtAmount) external nonReentrant whenNotPaused {
+        usdt.safeTransferFrom(msg.sender,address(this),usdtAmount);
+        _subscribe(msg.sender,id,usdtAmount);
+    }
+
+    // ===============================
+    // 管理员代购
+    // ===============================
+    function adminSubscribe(address user,uint256 id,uint256 usdtAmount) external onlyOwner {
+        usdt.safeTransferFrom(msg.sender,address(this),usdtAmount);
+        uint256 tokenAmount = usdtAmount / assets[id].price;
+        _subscribe(user,id,usdtAmount);
+        emit AdminSubscribed(msg.sender,user,id,usdtAmount,tokenAmount);
+    }
+
+    // ===============================
+    // EIP712 签名认购
+    // ===============================
+    function subscribeBySig(address user,uint256 id,uint256 amount,uint256 nonce,bytes calldata sig) external {
+        bytes32 digest = _hashTypedDataV4(
+            keccak256(abi.encode(SUBSCRIBE_TYPEHASH,user,id,amount,nonce))
+        );
+        address signer = ECDSA.recover(digest,sig);
+        require(signer == user,"invalid sig");
+        require(nonce == nonces[user]++,"nonce");
+
+        usdt.safeTransferFrom(user,address(this),amount);
+        _subscribe(user,id,amount);
+    }
+
+    // ===============================
+    // 启动资产
+    // ===============================
+    function startAsset(uint256 id) external onlyOwner {
+        Asset storage a = assets[id];
+        require(a.totalRaised >= a.minRaise,"below minRaise");
+        require(!a.running,"running");
+        a.running = true;
+        emit AssetStarted(id);
+    }
+
+    // ===============================
+    // 注入分红
+    // ===============================
+    function injectProfit(uint256 id,uint256 amount) external onlyOwner {
+        uint256 fee = (amount * platformFee)/10000;
+        uint256 profit = amount - fee;
+        uint256 supply = totalSupply(id);
+        require(supply>0,"no holders");
+
+        usdt.safeTransferFrom(msg.sender,address(this),amount);
+        accProfitPerShare[id] += (profit * ACC)/supply;
+        if(fee>0 && feeReceiver!=address(0)){
+            usdt.safeTransfer(feeReceiver,fee);
+        }
+        emit ProfitInjected(id,profit);
+    }
+
+    function batchInjectProfit(uint256[] calldata ids,uint256[] calldata profits) external onlyOwner {
+        require(ids.length == profits.length,"len");
+        uint256 total;
+        for(uint256 i;i<ids.length;){
+            uint256 supply = totalSupply(ids[i]);
+            accProfitPerShare[ids[i]] += (profits[i]*ACC)/supply;
+            total += profits[i];
+            emit ProfitInjected(ids[i],profits[i]);
+            unchecked{ ++i; }
+        }
+        usdt.safeTransferFrom(msg.sender,address(this),total);
+    }
+
+    // ===============================
+    // 用户仓位查询
+    // ===============================
+    function getUserPosition(uint256 id,address user) external view returns(uint256 tokenBalance,uint256 invested,uint256 pendingProfit){
+        tokenBalance = balanceOf(user,id);
+        invested = investedAmount[id][user];
+        pendingProfit = pending[id][user];
+    }
+
+    // ===============================
+    // 领取收益
+    // ===============================
+    function claim(uint256 id) external nonReentrant {
+        _updateProfit(id,msg.sender);
+        uint256 amt = pending[id][msg.sender];
+        require(amt>0,"no profit");
+        pending[id][msg.sender] = 0;
+        usdt.safeTransfer(msg.sender,amt);
+        emit Claimed(msg.sender,id,amt);
+    }
+
+    // ===============================
+    // 到期赎回
+    // ===============================
+    function redeem(uint256 id) external nonReentrant {
+        Asset storage a = assets[id];
+        require(block.timestamp >= a.endTime,"not ended");
+
+        uint256 bal = balanceOf(msg.sender,id);
+        require(bal>0,"no token");
+
+        _updateProfit(id,msg.sender);
+        uint256 principal = investedAmount[id][msg.sender];
+        uint256 profit = pending[id][msg.sender];
+
+        pending[id][msg.sender] = 0;
+        investedAmount[id][msg.sender] = 0;
+
+        _burn(msg.sender,id,bal);
+        usdt.safeTransfer(msg.sender,principal+profit);
+
+        if(totalSupply(id)==0){
+            a.finished = true;
+        }
+        emit Redeemed(msg.sender,id,principal,profit);
+    }
+
+    // ===============================
+    // 暂停 / 恢复
+    // ===============================
+    function pause() external onlyOwner { _pause(); }
+    function unpause() external onlyOwner { _unpause(); }
+
+    // ===============================
+    // 紧急提取
+    // ===============================
+    function emergencyWithdraw(uint256 amount) external onlyOwner{
+        usdt.safeTransfer(msg.sender,amount);
+    }
+
+    // ===============================
+    // 禁止 ERC1155 转账
+    // ===============================
+    function _update(address from,address to,uint256[] memory ids,uint256[] memory values) internal override(ERC1155,ERC1155Supply){
+        for(uint256 i;i<ids.length;){
+            require(from==address(0) || to==address(0),"non transferable");
+            _updateProfit(ids[i],from);
+            _updateProfit(ids[i],to);
+            unchecked{ ++i; }
+        }
+        super._update(from,to,ids,values);
+    }
+}
+```
