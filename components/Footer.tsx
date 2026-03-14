@@ -88,7 +88,7 @@ export default function Footer() {
             <MuiLink href="#" color="grey.500" underline="hover">
               白名单
             </MuiLink>
-            <MuiLink href="/investor" color="grey.500" underline="hover">
+            <MuiLink href="/admin/kyc" color="grey.500" underline="hover">
               投资人看板
             </MuiLink>
           </Stack>
@@ -132,7 +132,7 @@ export default function Footer() {
             <MuiLink href="#" color="grey.500" underline="hover">
               隐私政策
             </MuiLink>
-            <MuiLink href="/investor" color="grey.500" underline="hover">
+            <MuiLink href="/admin/kyc" color="grey.500" underline="hover">
               投资人看板
             </MuiLink>
             <MuiLink href="/devlog" color="red.500" underline="hover">

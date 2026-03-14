@@ -16,6 +16,9 @@ import {
   Alert,
 } from "@mui/material";
 import { useWallets } from "@privy-io/react-auth";
+import { ethers } from "ethers";
+
+import RWAArtifact from "@/abi/RWAPlatform1155.json";
 
 export default function AssetBuyPage({ asset }: any) {
   const { wallets } = useWallets();
@@ -35,7 +38,35 @@ export default function AssetBuyPage({ asset }: any) {
 
   const handleCloseSnackbar = () => setSnackbarOpen(false);
 
+  const [wallet, setWallet] = useState<string>("");
 
+  async function getUserRWAContract() {
+    console.log("Connecting to wallet..11111111.");
+    if (typeof window === "undefined" || !window.ethereum) {
+
+      console.log("Connecting to wallet..2222222222222.");
+      throw new Error("No wallet found");
+    }
+
+    console.log("Connecting to wallet..33333333333.");
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    const signer = await provider.getSigner();
+    const contract_address = process.env.RWA_CONTRACT!;
+
+    
+    const contract = new ethers.Contract(
+      contract_address,
+      RWAArtifact.abi,
+      signer
+    );
+    console.log("Wallet connected:", await signer.getAddress());
+
+    const address = await signer.getAddress();
+    setWallet(address);
+    console.log("Connected wallet:", address);
+
+    return contract;
+  }
 
   // 🔄 获取资产链上数据
   const fetchAssetStatus = async () => {
@@ -66,19 +97,26 @@ export default function AssetBuyPage({ asset }: any) {
 
       setLoading(true);
 
-      const res = await fetch("/api/rwa/subscribe", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: asset.token_id, usdtAmount: amount,userAddress: address }), // 这里的 userAddress 应该从用户的连接钱包中获取
-      });
+      const contract = await getUserRWAContract();
 
-      const data = await res.json();
+      return; // 先返回，后续开发链上交互
 
-      if (!res.ok) {
-        throw new Error(data.error || "认购失败");
-      }
+      // 确保先 approve USDT 后再调用
+      await contract.subscribe(asset.token_id, amount);
 
-      setSnackbarMsg(`认购成功！交易哈希: ${data.txHash}，区块号: ${data.blockNumber}`);
+      // const res = await fetch("/api/rwa/subscribe", {
+      //   method: "POST",
+      //   headers: { "Content-Type": "application/json" },
+      //   body: JSON.stringify({ id: asset.token_id, usdtAmount: amount,userAddress: address }), // 这里的 userAddress 应该从用户的连接钱包中获取
+      // });
+
+      // const data = await res.json();
+
+      // if (!res.ok) {
+      //   throw new Error(data.error || "认购失败");
+      // }
+
+      // setSnackbarMsg(`认购成功！交易哈希: ${data.txHash}，区块号: ${data.blockNumber}`);
       setSnackbarSeverity("success");
       setSnackbarOpen(true);
 

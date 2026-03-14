@@ -1,0 +1,204 @@
+---
+title: KYC 流程
+description: KYC 流程
+date: "2026-03-14"
+tags: []
+cover: /images/rwa-cover.jpg
+---
+
+
+# 1.KYC 流程
+KYC（Know Your Customer）流程是金融机构和其他受监管的实体用来验证客户身份、评估潜在风险和确保合规性的一系列步骤。KYC 流程通常包括以下几个阶段：
+1. 客户身份验证：客户需要提供身份证明文件，如护照、驾驶执照或国家身份证，以验证其身份。
+2. 地址验证：客户需要提供地址证明文件，如水电账单、银行对账单或租赁协议，以验证其居住地址。
+3. 风险评估：金融机构会评估客户的风险水平，考虑因素包括客户的职业、收入来源、交易历史和地理位置等，以确定是否需要进行更深入的尽职调查。
+4. 反洗钱（AML）检查：金融机构会进行反洗钱检查，以确保客户的资金来源合法，并且不会被用于洗钱、恐怖融资或其他非法活动。
+5. 持续监控：KYC 流程不仅在客户开户时进行，还需要持续监控客户的交易活动，以确保其行为符合预期，并及时更新客户信息以保持合规性。
+KYC 流程对于金融机构来说非常重要，因为它有助于防止金融犯罪、保护客户资金安全，并确保遵守相关法规和法律要求。对于客户来说，KYC 流程可能会增加一些繁琐的步骤，但它有助于保护他们的账户安全和隐私。    
+
+
+ ##  程序流程现在遇到的问题
+ 把用户钱包地址放到服务器了，但是用户认购资产还是显示没有通过KYC，初步估计应该是提交钱包地址的大小写问题！
+
+ # 2 区块链无法遍历 mapping
+ ```
+ mapping(address => bool) public whitelisted;       // KYC 白名单
+ ```
+ 
+所以：
+
+❌ 无法在链上获取 “所有白名单地址列表”
+
+✅ 只能 查询某个地址是否在白名单
+
+### 确认链上查询结果是正确的
+
+```
+console.log("链上查询 UserAddress is:", userAddress);
+const isWhite = await contract.whitelisted(userAddress);
+console.log("链上查询结果 isWhite:", isWhite);
+```
+
+## 3. 为什么服务器不能直接“获取用户 contract”
+
+
+因为区块链交易必须由 用户私钥签名。
+
+服务器：
+
+没有用户私钥
+
+所以服务器无法生成：
+
+msg.sender = 用户
+
+除非：
+
+> 用户把私钥给你（绝对不能）
+
+## 4.
+### 1 服务器 contract（管理员）
+```
+export function getAdminRWAContract() {
+
+  const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
+
+  const wallet = new ethers.Wallet(
+    decryptPrivateKey(process.env.DEPLOYER_PRIVATE_KEY!),
+    provider
+  );
+
+  return new ethers.Contract(
+    getRWAPlatformAddress(),
+    RWAArtifact.abi,
+    wallet
+  );
+}
+用于
+setWhitelist
+registerAsset
+injectProfit
+```
+
+### 2 只读 contract（公共查询）
+```
+export function getPublicRWAContract() {
+
+  const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
+
+  return new ethers.Contract(
+    getRWAPlatformAddress(),
+    RWAArtifact.abi,
+    provider
+  );
+}
+用于：
+assets()
+whitelisted()
+balanceOf()
+
+```
+
+### 3 用户 contract（投资）
+用户 contract（只能在前端）
+
+```
+export function getUserRWAContract() {
+
+  const provider = new ethers.BrowserProvider(window.ethereum);
+
+  const signer = provider.getSigner();
+
+  return new ethers.Contract(
+    getRWAPlatformAddress(),
+    RWAArtifact.abi,
+    signer
+  );
+}
+用于：
+subscribe()
+```
+## 4. 总结 重要认知
+
+```
+| 类型              | signer          | 用途 |
+| --------------- | --------------- | -- |
+| Admin Contract  | deployer wallet | 管理 |
+| Public Contract | provider        | 查询 |
+| User Contract   | wallet signer   | 投资 |
+```
+
+
+
+### 4 关键区别
+
+
+浏览器端用户钱包（Metamask / WalletConnect）
+
+有 window.ethereum
+
+用户自己签名交易 → msg.sender = 用户钱包
+
+合约里的 KYC 白名单检查会对用户有效
+
+服务端固定钱包（你平台的钱包）
+
+没有 window.ethereum
+
+只能用 ethers.Wallet(privateKey, provider)
+
+msg.sender = 你的平台钱包
+
+合约里 require(whitelisted[msg.sender]) 会检查平台钱包是否在白名单
+
+无法代表其他用户签名交易
+
+⚠️ 所以，你的 subscribe 函数默认是“必须由用户自己调用”的
+
+#### 如果你确实想用 平台钱包代投
+
+```
+function subscribeFor(
+    uint256 id,
+    address user,
+    uint256 usdtAmount
+) external nonReentrant onlyOwner {
+    require(whitelisted[user], "RWA: user not KYC");
+
+    Asset storage a = assets[id];
+    require(block.timestamp < a.deadline, "RWA: ended");
+    require(a.totalRaised + usdtAmount <= a.maxRaise, "RWA: over raise");
+    require(usdtAmount % a.price == 0, "RWA: invalid amount");
+
+    uint256 amount = usdtAmount / a.price;
+
+    // 转 USDT 到合约 (由平台钱包转)
+    usdt.safeTransferFrom(msg.sender, address(this), usdtAmount);
+
+    a.totalRaised += usdtAmount;
+    investedAmount[id][user] += usdtAmount;
+
+    _mint(user, id, amount, "");
+
+    emit Subscribed(user, id, usdtAmount);
+}
+```
+特点：
+
+msg.sender 是平台钱包
+
+user 是实际投资人
+
+平台钱包必须在链上 approve USDT
+
+函数最好加 onlyOwner 防止别人随便代投
+
+然后你的 Node.js 后端调用就可以：
+
+```
+const provider = new ethers.JsonRpcProvider(RPC_URL);
+const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
+const contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, wallet);
+
+await contract.subscribeFor(id, userAddress, usdtAmount);
+```

@@ -5,6 +5,7 @@ import { getRWAPlatformAddress } from "./contracts";
 
 import { decryptPrivateKey } from "./wallet-crypto";
 
+// 服务器 contract（管理员）
 export function getRWAPlatformContract() {
 
   const encryptedKey = process.env.DEPLOYER_PRIVATE_KEY!;
@@ -25,5 +26,17 @@ export function getRWAPlatformContract() {
   );
 
   return contract;
+}
+
+// 只读 contract
+export function getPublicRWAContract() {
+
+  const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
+
+  return new ethers.Contract(
+    getRWAPlatformAddress(),
+    RWAArtifact.abi,
+    provider
+  );
 }
 

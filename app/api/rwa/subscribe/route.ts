@@ -2,7 +2,9 @@
 import { getRWAPlatformContract } from "@/lib/rwaPlatformContract";
 import { NextRequest, NextResponse } from "next/server";
 import { ethers } from "ethers";
+import RWAArtifact from "@/abi/RWAPlatform1155.json";
 import pool from "@/lib/db";
+import { getRWAPlatformAddress } from "@/lib/contracts";
 
 export async function POST(req: NextRequest) {
   try {
@@ -24,14 +26,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Not whitelisted!还没有通过KYC认证" }, { status: 403 });
     }
 
-    const contract = getRWAPlatformContract();
+    const contract = getRWAPlatformContract()
+
+    return NextResponse.json({ success: true, message: "Whitelist check passed, ready to subscribe on-chain." });
+
+    //链上查询
+    console.log("链上查询 UserAddress is:", userAddress);
+    const isWhite = await contract.whitelisted(userAddress);
+    console.log("链上查询结果 isWhite:", isWhite);
 
     const amount = ethers.parseUnits(usdtAmount.toString(), 6);
 
     const tx = await contract.subscribe(id, amount);
     const receipt = await tx.wait();
 
-    
     // 从链上读真实 totalRaised
     const asset = await contract.assets(id);
 

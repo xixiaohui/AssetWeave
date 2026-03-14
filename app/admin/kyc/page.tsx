@@ -83,7 +83,8 @@ export default function AdminKycPage() {
       mutate(); // 刷新列表
     }
 
-    uptoBlockChain(data.wallet_address) // 同步链上白名单
+
+    // uptoBlockChain(data.wallet_address) // 同步链上白名单
   };
 
 
