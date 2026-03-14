@@ -1,0 +1,61 @@
+---
+title: postgresql备份
+description: 服务器变更，需要把原来的postgresql数据迁移到新的服务器上
+date: "2026-03-13"
+tags: []
+cover: /images/rwa-cover.jpg
+---
+
+
+# 1.postgresql备份
+
+安装同一个postgresql版本的数据库，创建同名用户和数据库
+
+```
+psql --version
+
+安装
+sudo apt update
+sudo apt install postgresql-16
+
+
+sudo -u postgres pg_dumpall > alldb.sql
+
+scp alldb.sql root@208.167.233.53:/root/
+```
+
+## 启动 postgresql 服务
+sudo systemctl start postgresql
+
+重新启动
+sudo systemctl restart postgresql
+
+## 验证是否启动
+sudo systemctl status postgresql
+
+## 查看启动的postgresql的服务的端口号
+sudo ss -plnt | grep postgres
+
+
+
+## 配置postgresql.conf
+sudo nano /etc/postgresql/16/main/postgresql.conf
+
+将listen_addresses = 'localhost'改为listen_addresses = '*'
+## 配置pg_hba.conf
+sudo nano /etc/postgresql/16/main/pg_hba.conf
+
+在文件末尾添加以下行，允许来自任何IP地址的连接：
+
+host    all             all             0.0.0.0/0               md5
+
+重启
+sudo systemctl restart postgresql
+再检查
+sudo ss -plnt | grep 5432
+
+## Vultr 云服务器还需要：
+sudo ufw allow 5432/tcp
+
+Vultr Control Panel → Firewall → 开放 5432
+
