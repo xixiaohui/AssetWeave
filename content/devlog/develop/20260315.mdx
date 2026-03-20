@@ -1,0 +1,655 @@
+---
+title: 配置openclaw新项目
+description:
+date: "2026-03-15"
+tags: []
+cover: /images/rwa-cover.jpg
+---
+
+# 1.如何开始
+
+已安装 OpenClaw
+
+已接入 OpenRouter
+
+已连接 Telegram
+
+第一步：
+创建主题agent
+
+名字 comic-topic 作用 生成漫画主题
+
+### openclaw agents add comic-topic
+
+```
+~/.openclaw/workspace-comic-topic# ls
+AGENTS.md  BOOTSTRAP.md  HEARTBEAT.md  IDENTITY.md  SOUL.md  TOOLS.md  USER.md
+
+
+| 文件           | 作用          |
+| ------------ | ----------- |
+| IDENTITY.md  | Agent 的身份   |
+| SOUL.md      | Agent 的行为规则 |
+| USER.md      | 用户上下文       |
+| TOOLS.md     | 可用工具        |
+| AGENTS.md    | 子Agent      |
+| BOOTSTRAP.md | 启动逻辑        |
+| HEARTBEAT.md | 定时任务        |
+
+```
+
+中英文
+
+### nano SOUL.md
+
+```
+你是一个漫画选题生成助手。
+
+你的任务是生成搞笑的四格漫画选题。
+
+主题：
+父亲和女儿的日常生活。
+
+要求：
+
+1. 选题要生活化
+2. 选题要幽默
+3. 选题要简单
+4. 每次只输出一个选题
+5. 不要解释
+
+---
+
+You are a comic topic generator.
+
+Your task is to generate humorous topics for a 4-panel comic.
+
+Theme:
+daily life of a father and daughter.
+
+Rules:
+
+- topic must be funny
+- topic must be relatable
+- topic must be simple
+- output only ONE topic
+- do not explain
+```
+
+# 2.运行第一个agent 命令
+
+```
+root@vultr:~/.openclaw/workspace-comic-topic# openclaw agent --agent comic-topic --message "给我一个父亲和女儿的搞笑四格漫画选题" --deliver --reply-to "#comic"
+
+🦞 OpenClaw 2026.3.12 (6472949) — I've seen your commit messages. We'll work on that together.
+
+│
+gateway connect failed: Error: gateway closed (1000):
+◇
+Gateway agent failed; falling back to embedded: Error: gateway closed (1000 normal closure): no close reason
+Gateway target: ws://127.0.0.1:18789
+Source: local loopback
+Config: /root/.openclaw/openclaw.json
+Bind: loopback
+02:16:24 [tools] tools.profile (coding) allowlist contains unknown entries (apply_patch, image). These entries won't match any tool unless the plugin is enabled.
+早晨闹钟大战：爸爸想赖床，女儿用更响的闹铃和逗趣道具轮番“叫醒”，四格从赖床到全家笑场的日常趣味。
+02:16:30 [telegram] autoSelectFamily=true (default-node22)
+02:16:30 [telegram] dnsResultOrder=ipv4first (default-node22)
+Error: Telegram recipient must be a numeric chat ID
+```
+
+> 修改
+
+### openclaw agent --agent comic-topic --message "给我一个父亲和女儿的搞笑四格漫画选题" --deliver --reply-to "7181701725"
+
+# 3.接着创建第二个agent
+
+```
+openclaw agents add comic-script
+```
+
+```
+○ OpenAI
+│  ○ Anthropic
+│  ○ Chutes
+│  ○ MiniMax
+│  ○ Moonshot AI (Kimi K2.5)
+│  ○ Google
+│  ○ xAI (Grok)
+│  ○ Mistral AI
+│  ○ Volcano Engine
+│  ○ BytePlus
+│  ● OpenRouter (API key)
+│  ○ Kilo Gateway
+│  ○ Qwen
+│  ○ Z.AI
+│  ○ Qianfan
+│  ○ Alibaba Cloud Model Studio
+│  ○ Copilot
+│  ○ Vercel AI Gateway
+│  ○ OpenCode
+│  ○ Xiaomi
+│  ○ Synthetic
+│  ○ Together AI
+│  ○ Hugging Face
+│  ○ Venice AI
+│  ○ LiteLLM
+│  ○ Cloudflare AI Gateway
+│  ○ Custom Provider
+│  ○ Ollama
+│  ○ SGLang
+```
+
+进入配置目录
+cd ~/.openclaw/workspace-comic-script
+
+nano SOUL.md
+
+```
+你是一个四格漫画脚本创作助手。
+
+任务：
+根据漫画选题，生成四格漫画脚本。
+
+漫画主题：
+父亲和女儿的日常生活。
+
+要求：
+
+1 每次生成四格
+2 每格一句对白或描述
+3 要幽默
+4 要生活化
+5 输出格式固定
+
+格式：
+
+标题：
+xxxx
+
+第一格：
+xxxx
+
+第二格：
+xxxx
+
+第三格：
+xxxx
+
+第四格：
+xxxx
+
+
+---
+
+You are a comic script generator.
+
+Task:
+convert a comic topic into a 4-panel comic script.
+
+Theme:
+daily life of father and daughter.
+
+Rules:
+
+- output exactly 4 panels
+- each panel contains a short dialogue or description
+- must be funny
+- must be simple
+```
+
+### 运行测试
+
+openclaw agent --agent comic-script --message "早晨闹钟大战：爸爸想赖床，女儿想叫醒他" --deliver --reply-to "7181701725"
+
+```
+标题：
+早晨闹钟大战：爸爸想赖床，女儿想叫醒他
+
+第一格：
+闹钟像小炮仗一样响，爸爸假装睡着，女儿蹑手蹑脚走进来喊：“起床啦，太阳在门口排队等你！”
+
+第二格：
+爸爸翻个身打个哈欠：“再睡五分钟行不行？”女儿举着写着“起床挑战书”的牌子：“挑战开始，失败者请吃早餐！”
+
+第三格：
+女儿端来早餐袋：“早餐已签收，赖床扣除券已用完！”爸爸苦笑接过煎蛋。
+
+第四格：
+阳光洒满客厅，两人相视大笑，爸爸睁眼说：“好吧，我起。”
+```
+
+# 4.创建第三个agent
+
+创建
+
+```
+openclaw agents add comic-draw
+```
+
+确认
+cd ~/.openclaw/workspace-comic-draw
+
+编辑SOUL.md
+
+```
+你是一个漫画画面设计助手。
+
+任务：
+
+根据四格漫画脚本，为每一格生成一个绘图提示（image prompt）。
+
+这些提示将用于 AI 绘图模型生成漫画。
+
+
+--------------------------------
+
+角色设定
+
+父亲
+
+年龄：35岁
+短发
+稍微有点乱
+普通上班族
+穿T恤或衬衫
+表情有点无奈
+
+
+女儿
+
+年龄：6-8岁
+马尾辫
+圆脸
+表情活泼
+穿简单可爱的衣服
+
+
+--------------------------------
+
+画风
+
+卡通漫画风格
+简洁线条
+明亮颜色
+可爱表情
+温馨家庭氛围
+
+四格漫画布局
+
+
+--------------------------------
+
+规则
+
+1 必须生成4个绘图提示
+2 每格一个 prompt
+3 每个 prompt 必须描述：
+   人物
+   动作
+   表情
+   环境
+4 保持角色外观一致
+5 不要输出解释
+
+
+--------------------------------
+
+输出格式
+
+Title: xxx
+
+1:
+Prompt: xxx
+
+2:
+Prompt: xxx
+
+3:
+Prompt: xxx
+
+4:
+Prompt: xxx
+
+
+================================
+
+
+You are a comic image prompt generator.
+
+Task:
+
+Convert a 4-panel comic script into image generation prompts.
+
+These prompts will be used by AI image models.
+
+
+--------------------------------
+
+Character Design
+
+Father
+
+Age around 35
+Short slightly messy hair
+Office worker
+Wearing t-shirt or shirt
+Often looks slightly tired
+
+
+Daughter
+
+Age 6–8
+Ponytail
+Round face
+Playful expression
+Cute casual clothes
+
+
+--------------------------------
+
+Art Style
+
+cartoon comic style
+simple lines
+bright colors
+cute expressions
+warm family atmosphere
+4 panel comic layout
+
+
+--------------------------------
+
+Rules
+
+1 Generate exactly 4 prompts
+2 One prompt for each panel
+3 Each prompt must describe:
+   characters
+   action
+   facial expression
+   environment
+4 Keep character appearance consistent
+5 Do not output explanations
+
+
+--------------------------------
+
+Output format
+
+Title: xxx
+
+1:
+Prompt: xxx
+
+2:
+Prompt: xxx
+
+3:
+Prompt: xxx
+
+4:
+Prompt: xxx
+```
+
+# 5.现在我们把 第三个 Agent comic-draw 接上真正的 绘图 Skill
+
+```
+comic-topic
+      ↓
+comic-script
+      ↓
+comic-draw
+      ↓
+生成四格漫画 PNG
+```
+
+下面给你一套 可以直接运行的 Python Skill，它会：
+
+1️⃣ 调用 AI 生成图片
+2️⃣ 生成 4 张漫画
+3️⃣ 自动拼接四格
+4️⃣ 输出 comic_xxxx.png
+
+mkdir -p ~/.openclaw/skills/comic-image
+
+nano comic_image.py
+
+```
+import os
+import requests
+from PIL import Image
+from io import BytesIO
+
+# =========================
+# 配置
+# =========================
+
+API_URL = "https://openrouter.ai/v1/images/generate"
+API_KEY = os.getenv("OPENROUTER_API_KEY")
+
+OUTPUT_DIR = "./output"
+os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+
+# =========================
+# 生成图片
+# =========================
+def generate_image(prompt, index):
+
+    headers = {
+        "Authorization": f"Bearer {API_KEY}",
+        "Content-Type": "application/json",
+    }
+
+    payload = {
+        "model": "",
+        "prompt": prompt,
+        "width": 1024,
+        "height":1024
+
+    }
+
+    r = requests.post(API_URL, headers=headers, json=payload)
+
+    print("API RESPONSE:", r.text)
+
+    data = r.json()
+
+    image_url = data["data"][0]["url"]
+
+    img = Image.open(requests.get(image_url, stream=True).raw)
+
+    return img
+
+
+# =========================
+# 拼接四格漫画
+# =========================
+
+def combine_comic(images):
+
+    imgs = [Image.open(i) for i in images]
+
+    w, h = imgs[0].size
+
+    canvas = Image.new("RGB", (w*2, h*2), "white")
+
+    canvas.paste(imgs[0], (0,0))
+    canvas.paste(imgs[1], (w,0))
+    canvas.paste(imgs[2], (0,h))
+    canvas.paste(imgs[3], (w,h))
+
+    path = f"{OUTPUT_DIR}/comic.png"
+    canvas.save(path)
+
+    return path
+
+
+# =========================
+# 主流程
+# =========================
+
+def generate_comic(prompts):
+
+    images = []
+
+    for i, p in enumerate(prompts):
+        img = generate_image(p, i)
+        images.append(img)
+
+    comic = combine_comic(images)
+
+    return comic
+
+
+# =========================
+# 测试
+# =========================
+
+if __name__ == "__main__":
+
+    prompts = [
+        "cartoon father sleeping in bed, daughter beside bed, morning light",
+        "little girl with ponytail ringing alarm clock near father",
+        "father suddenly waking up shocked, daughter laughing",
+        "father and daughter laughing together in living room"
+    ]
+
+    comic = generate_comic(prompts)
+
+    print("Comic generated:", comic)
+```
+
+## 安装依赖
+
+```
+先安装 venv（如果没有）：
+
+apt update
+apt install python3-venv -y
+
+进入你的 skill 目录：
+
+cd ~/.openclaw/skills/comic-image
+
+创建虚拟环境：
+
+python3 -m venv venv
+
+激活环境：
+
+source venv/bin/activate
+
+你会看到前面出现：
+
+(venv)
+
+然后安装依赖：
+
+pip install pillow requests
+```
+
+以后运行都这样
+
+```
+cd ~/.openclaw/skills/comic-image
+source venv/bin/activate
+python comic_image.py
+```
+
+curl https://openrouter.ai/api/v1/chat/completions \
+  -H "Authorization: Bearer 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" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "google/gemini-3.1-flash-image-preview",
+    "messages": [
+      {"role":"user","content":"hello"}
+    ],
+    "modalities": ["image"]
+  }'
+
+# 6.创建 Skill 配置文件
+
+在 comic-image 目录创建：
+
+skill.yaml
+
+路径：
+
+~/.openclaw/skills/comic-image/skill.yaml
+
+内容：
+```
+name: comic-image
+description: Generate comic images using OpenRouter and combine into a comic strip
+version: 1.0
+
+entrypoint: comic_image.py
+
+inputs:
+  - name: prompts
+    type: list
+    description: list of image prompts
+
+outputs:
+  - name: comic_path
+    type: string
+    description: generated comic image path
+```
+
+## 修改 comic_image.py 让 Skill 可调用
+
+OpenClaw Skill 通常从 stdin 接收参数。
+
+在 comic_image.py 最后加：
+
+```python
+import sys
+import json
+
+def main():
+
+    data = json.load(sys.stdin)
+
+    prompts = data.get("prompts", [])
+
+    comic = generate_comic(prompts)
+
+    result = {
+        "comic_path": comic
+    }
+
+    print(json.dumps(result))
+
+
+if __name__ == "__main__":
+    main()
+```
+
+这样 OpenClaw 才能调用。
+
+### 三、测试 Skill
+
+在服务器运行：
+```
+echo '{
+  "prompts": [
+    "cute cartoon father sleeping",
+    "daughter ringing alarm clock",
+    "father shocked awake",
+    "father and daughter laughing"
+  ]
+}' | python comic_image.py
+
+```
+返回类似：
+
+{
+ "comic_path": "./output/comic.png"
+}
+
+说明 Skill 成功。
+
+### 四，Agent 调用skill
+
