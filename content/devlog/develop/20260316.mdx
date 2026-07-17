@@ -1,0 +1,55 @@
+---
+title: RWAPlatform1155ProV2合约内容
+description: 多资产 ERC1155 RWA 平台
+date: "2026-03-14"
+tags: []
+cover: /images/rwa-cover.jpg
+---
+
+
+# 1.手动修改配置文件~/.openocean/config.json，添加第二个Bot账号配置和绑定规则：
+
+```
+"channels": {
+  "telegram": {
+    "enabled": true,
+    "accounts": {
+      "default": {                          // 原主Bot，改名叫 default
+        "botToken": "8755110955:AAGQcfUOoxIBMvwbMYwZrHuAcH7QxGxaGno",
+        "dmPolicy": "pairing",
+        "groupPolicy": "allowlist",
+        "streaming": "partial"
+      },
+      "pm": {                               // 新加的第二个Bot（产品经理示例）
+        "botToken": "你的第二个Bot Token，例如 7123456789:AAFxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        "dmPolicy": "pairing",              // 可以每个Bot独立设置策略
+        "groupPolicy": "allowlist",
+        "streaming": "partial"
+      }
+      // 可以继续加 "dev": { ... }, "qa": { ... } 等
+    }
+  }
+},
+"bindings": [
+  {
+    "agentId": "main",                    // 你的主Agent ID（在 agents.list 里找）
+    "match": {
+      "channel": "telegram",
+      "accountId": "default"              // 对应上面的 default
+    }
+  },
+  {
+    "agentId": "pm",                      // 假设你有第二个Agent叫 pm
+    "match": {
+      "channel": "telegram",
+      "accountId": "pm"
+    }
+  }
+]
+```
+
+# 2.每个机器人都要/start 一下，激活它们的配置。
+然后再服务器执行,激活机器人配对：
+```
+openclaw pairing approve telegram 7********
+```

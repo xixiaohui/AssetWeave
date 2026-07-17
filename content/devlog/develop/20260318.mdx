@@ -1,0 +1,201 @@
+---
+title: Openclaw 配置生成图片助理，发布到网站的api
+description:
+date: "2026-03-18"
+tags: [openclaw]
+cover: /images/rwa-cover.jpg
+---
+
+
+# 1.Openclaw 图片生成
+
+```
+
+Host（主机地址）208.167.233.53 
+Port（端口，默认 5432）
+Database name（数据库名）comic_db
+Username / Password  comic/comic123456
+
+
+直接存到你的服务器某个目录？/root/comics/images
+API Key：你想自己指定一个固定的 key，还是让我生成一个随机的？随机生成
+```
+```
+CREATE USER comic WITH PASSWORD 'comic123456';
+
+```
+
+```
+CREATE DATABASE comic_db
+WITH 
+OWNER = comic
+ENCODING = 'UTF8'
+LC_COLLATE = 'en_US.UTF-8'
+LC_CTYPE = 'en_US.UTF-8'
+TEMPLATE = template0;
+```
+
+### ai 任务列表
+```
+0 Tasks Remaining
+安装依赖：Prisma, pg, multer, uuid, crypto等
+配置 Prisma + PostgreSQL，定义数据模型
+实现 API Key 鉴权中间件
+实现图片上传 API (/api/v1/upload)
+实现漫画 CRUD API (/api/v1/comics)
+实现章节 API (/api/v1/comics/[id]/episodes)
+实现前端首页
+实现漫画列表页
+实现漫画详情页
+实现漫画阅读页
+Git commit & PR
+```
+```
+你的 API Key（请妥善保存）
+sk-16cb70343f469b3f27c48a6a8ce3600a98efe11f4b0060dbd0d4d4a603705e56
+```
+
+```
+创建的文件结构
+app/
+├── api/v1/
+│   ├── upload/route.ts          ← 图片上传
+│   └── comics/
+│       ├── route.ts             ← 漫画列表/创建
+│       └── [id]/
+│           ├── route.ts         ← 漫画详情/更新/删除
+│           └── episodes/route.ts ← 章节创建
+├── (web)/
+│   ├── layout.tsx               ← 带导航的布局
+│   ├── page.tsx                 ← 首页
+│   ├── comics/page.tsx          ← 漫画列表+搜索
+│   ├── comics/[id]/page.tsx     ← 漫画详情
+│   ├── comics/[id]/[ep]/page.tsx ← 阅读器
+│   └── tags/[tag]/page.tsx      ← 标签页
+├── components/
+│   ├── Header.tsx / ComicCard.tsx / ComicReader.tsx
+lib/
+├── prisma.ts / auth.ts / storage.ts
+prisma/schema.prisma
+```
+
+### OpenClaw 调用示例
+```
+# 1. 上传图片
+curl -X POST https://your-domain/api/v1/upload \
+  -H "X-Api-Key: sk-16cb70..." \
+  -F "file=@cover.jpg"
+
+# 2. 创建漫画
+curl -X POST https://your-domain/api/v1/comics \
+  -H "X-Api-Key: sk-16cb70..." \
+  -H "Content-Type: application/json" \
+  -d '{"title":"我的漫画","status":"PUBLISHED","tags":["冒险"]}'
+
+# 3. 添加章节
+curl -X POST https://your-domain/api/v1/comics/{id}/episodes \
+  -H "X-Api-Key: sk-16cb70..." \
+  -H "Content-Type: application/json" \
+  -d '{"episodeNumber":1,"pages":[{"pageNumber":1,"imageUrl":"/uploads/p1.jpg"}]}'
+
+```
+# 2.第二次执行AI
+
+```
+0 Tasks Remaining
+规划漫画博客平台架构
+安装依赖并创建环境变量
+设计并创建数据库Schema
+实现漫画上传API
+实现漫画展示前端页面
+构建项目并启动服务测试
+```
+
+```
+🏗️ 项目架构
+webapp/
+├── app/
+│   ├── page.tsx                          # 首页（漫画网格+搜索+筛选）
+│   ├── layout.tsx                        # 全局导航布局
+│   ├── comics/
+│   │   ├── page.tsx                      # 所有漫画列表页
+│   │   └── [slug]/
+│   │       ├── page.tsx                  # 漫画详情页
+│   │       └── chapter/[chapterNum]/
+│   │           └── page.tsx              # 章节阅读器（滚动/翻页模式）
+│   └── api/
+│       ├── comics/upload/route.ts        # ⭐ OpenClaw 上传API
+│       ├── comics/list/route.ts          # 漫画列表API
+│       ├── comics/[id]/route.ts          # 漫画详情API
+│       ├── comics/[id]/chapters/...      # 章节页面API
+│       └── images/[...path]/route.ts     # 图片服务代理
+├── lib/
+│   ├── db.ts                             # PostgreSQL 连接池
+│   ├── auth.ts                           # API Key 鉴权
+│   └── storage.ts                        # 图片存储工具
+└── scripts/init-db.mjs                   # 数据库初始化脚本
+```
+
+
+### 🔑 OpenClaw 调用上传 API
+```
+
+POST /api/comics/upload
+Authorization: Bearer 89d42f249496a09eb9478ed94edbcbf9603e30e02aabe9c6c71af8c14178ca7f
+Content-Type: multipart/form-data
+
+Fields:
+  comic_title    必填  漫画名称（如 "Dragon's Path"）
+  chapter_num    必填  章节号（如 1 或 1.5）
+  chapter_title  选填  章节标题
+  description    选填  描述
+  author         选填  作者（默认 OpenClaw）
+  genre          选填  类型（action/fantasy/romance...）
+  tags           选填  逗号分隔标签
+  comic_slug     选填  自定义slug（不填自动从标题生成）
+  pages          必填  图片文件（支持jpg/png/webp/gif，自动转webp）
+
+Response:
+  {
+    "success": true,
+    "comic": { "id", "title", "slug", "url": "/comics/xxx" },
+    "chapter": { "id", "chapter_num", "page_count" },
+    "pages": [{ "page_num", "image_url" }]
+  }
+
+```
+```
+📊 数据库设计（PostgreSQL）
+
+表	说明
+api_keys	API密钥（SHA-256哈希存储）
+comics	漫画系列（title/slug/cover/genre/status...）
+chapters	章节（关联comic，自动统计page_count）
+pages	每页图片（URL + 存储路径 + 尺寸信息）
+```
+
+```
+图片存储路径规则
+/root/comics/images/<comic_slug>/ch0001/0001.webp
+                                         0002.webp
+                                 ch0002/0001.webp
+```
+```
+⚙️ 服务管理
+
+pm2 status                    # 查看状态
+pm2 restart comics-platform   # 重启
+pm2 logs comics-platform      # 查看日志
+npm run db:init               # 重新初始化数据库
+
+
+
+```
+
+```
+Deep Thinking
+Bash Command
+Write File
+Edit File
+Read File
+```

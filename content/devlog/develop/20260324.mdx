@@ -1,0 +1,41 @@
+---
+title: 如何把本地项目上传到Github
+date: "2026-03-24"
+tags: [openclaw,comic,website,genspark]
+cover: /images/rwa-cover.jpg
+---
+
+# 1. 准备工作
+- 确保你已经安装了 Git
+
+```
+# 1. 进入你的项目目录
+cd E:\workspace\mini\zhibankoudai
+
+# 2. 初始化（如果没初始化过）
+git init
+
+# 3. 添加所有文件
+git add .
+
+# 4. 提交
+git commit -m "init project"
+
+# 5. 设置分支为 main
+git branch -M main
+
+# 6. 绑定远程仓库（flowmail）
+git remote add origin https://github.com/xixiaohui/flowmail.git
+
+# 7. 强制推送（关键一步）
+git push -u origin main --force
+
+```
+
+# 2.git 代理设置
+如果你在国内访问 GitHub 速度很慢，可以设置 Git 代理来加速
+
+```
+git config --global http.proxy http://127.0.0.1:57890
+git config --global https.proxy http://127.0.0.1:57890
+```

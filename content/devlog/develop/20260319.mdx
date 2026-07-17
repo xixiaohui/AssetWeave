@@ -1,0 +1,154 @@
+---
+title: 继续Comic测试，漫画文件上传与生成结合
+description:
+date: "2026-03-19"
+tags: [openclaw,comic,website,genspark]
+cover: /images/rwa-cover.jpg
+---
+
+
+# 1.Genspark关联github
+
+Genspark关联Github，生成代码Upload以后，在genspark_ai_developer
+
+把远程genspark_ai_developer的代码拉取到本地main分支的方法
+```
+
+# 1. 确保在 main 分支
+git checkout main
+
+# 2. 拉取远程最新信息
+git fetch origin
+
+# 3. 合并远程分支到本地 main
+git merge origin/genspark_ai_develop
+
+```
+
+# 2.怎么借助 stitch.withgoogle原型设计，然后再aistudio 生成代码
+
+```
+https://stitch.withgoogle.com/
+
+https://aistudio.google.com/
+
+```
+```
+Gemini 3 Flash Preview
+Ran for 479s
+
+summarize_auto
+Action history
+chevron_right
+Here are key actions taken for the app:
+
+download
+Installed 5 packages
+edit
+Edited 25 files
+package.json
+check_circle
+lib/db.ts
+check_circle
+app/api/manga/route.ts
+check_circle
+app/api/manga/%5Bid%5D/route.ts
+check_circle
+app/api/chapters/%5BchapterId%5D/pages/route.ts
+check_circle
+app/api/openclaw/manga/route.ts
+check_circle
+app/api/openclaw/chapters/route.ts
+check_circle
+app/api/openclaw/pages/route.ts
+check_circle
+src/types.ts
+move_item
+src/components
+move_item
+src/index.css
+move_item
+app/layout.tsx
+check_circle
+app/page.tsx
+check_circle
+app/browse/page.tsx
+check_circle
+app/manga/%5Bid%5D/page.tsx
+check_circle
+app/reader/%5Bid%5D/%5BchapterId%5D/page.tsx
+check_circle
+components/MangaCard.tsx
+check_circle
+components/Navbar.tsx
+check_circle
+app/images/%5B...path%5D/route.ts
+check_circle
+src
+delete
+server.ts
+delete
+next.config.js
+check_circle
+postcss.config.js
+check_circle
+tsconfig.json
+check_circle
+init.sql
+check_circle
+build
+Built
+我已完成将项目重构为 Next.js 全栈架构 的所有优化工作。现在，该项目已准备好直接提交到 main 仓库，并支持在生产环境中编译运行。
+核心优化与功能实现
+Next.js 迁移：
+项目已完全迁移到 Next.js App Router 架构。
+移除了 Vite，改用 next 作为构建工具。
+所有页面（首页、浏览、详情、阅读器）均已转换为 Next.js 页面，并支持动态数据获取。
+配置了 next.config.js 以支持自定义图片服务。
+PostgreSQL 数据库集成：
+数据库连接：在 lib/db.ts 中实现了基于 pg 的连接池，默认连接到您提供的 208.167.233.53 数据库。
+API 路由：实现了完整的后端 API，用于获取漫画列表、详情和章节页面。
+初始化脚本：提供了 init.sql，包含完整的表结构（manga, chapters, pages）和示例数据。
+OpenClaw 自动化支持：
+专用 API：在 /api/openclaw/ 下提供了三个 POST 接口（manga, chapters, pages），供 OpenClaw 自动同步数据。
+图片服务：实现了 /api/images/[...path] 路由，动态读取并提供 /root/comics/images_gimini 目录下的图片。
+性能与体验：
+动效优化：保留并优化了 Framer Motion 的动效，确保在 Next.js 环境下依然流畅。
+响应式设计：适配各种屏幕尺寸，提供极致的阅读体验。
+部署与运行指南
+1. 数据库设置
+请在您的 PostgreSQL 服务器上运行根目录下的 init.sql 脚本：
+code
+Bash
+psql -h 208.167.233.53 -U comic -d comic_db -f init.sql
+2. 环境变量配置
+在部署环境（如 AI Studio 的 Settings -> Secrets）中设置以下变量：
+DB_HOST: 208.167.233.53
+DB_PORT: 5432
+DB_NAME: comic_db
+DB_USER: comic
+DB_PASSWORD: comic123456
+IMAGE_DIR: /root/comics/images_gimini
+3. 运行项目
+开发环境：npm run dev
+生产编译：npm run build
+启动服务：npm run start
+OpenClaw 接口说明
+同步漫画：POST /api/openclaw/manga
+同步章节：POST /api/openclaw/chapters
+同步页面：POST /api/openclaw/pages
+项目现在已经是一个完整的、可直接运行的 Next.js 全栈应用，您可以直接将其推送到仓库并部署。
+
+```
+
+```
+CREATE DATABASE comic_studio_db
+WITH 
+OWNER = comic
+ENCODING = 'UTF8'
+LC_COLLATE = 'en_US.UTF-8'
+LC_CTYPE = 'en_US.UTF-8'
+TEMPLATE = template0;
+
+```
+

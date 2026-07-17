@@ -558,6 +558,7 @@ source venv/bin/activate
 python comic_image.py
 ```
 
+```
 curl https://openrouter.ai/api/v1/chat/completions \
   -H "Authorization: Bearer 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" \
   -H "Content-Type: application/json" \
@@ -568,6 +569,7 @@ curl https://openrouter.ai/api/v1/chat/completions \
     ],
     "modalities": ["image"]
   }'
+```
 
 # 6.创建 Skill 配置文件
 
@@ -645,9 +647,11 @@ echo '{
 ```
 返回类似：
 
+```
 {
  "comic_path": "./output/comic.png"
 }
+```
 
 说明 Skill 成功。
 
